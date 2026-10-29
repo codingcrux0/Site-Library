@@ -6,7 +6,7 @@ Read this and `project_spec.md` at the start of every task. Update this file at 
 A free, tested, ranked library of useful websites. V1 has one category, Frontend Components. Full spec: `project_spec.md`.
 
 ## Where the files are (2026-10-29)
-All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: private, `codingcrux0/site-library` (see DECISIONS D21 for status).
+All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
 ## Current state (2026-10-28)
 - Project folder: `Documents/Anmol/Product-projects/site-library/` (git initialised, branch `main`, **no commits yet**).
