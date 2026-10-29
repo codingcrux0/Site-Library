@@ -1,68 +1,99 @@
-# Site Library (working name): a tested, ranked library of useful websites
+# Site Library (working name)
 
-Status: **M2 started early: the landing page is built.** No database or accounts yet.
+A free, tested, ranked library of useful websites. Every entry is tried by hand, dated, scored, and comes with "the catch".
+Version 1 has one category: Frontend Components. The landing page is built; there is no database and no real sign-in yet.
 
-## How to run
-You need Node.js 22.23.4 or newer (`node -v` to check).
+Built with Astro 7 (static pages) + React (small interactive pieces) + Tailwind 4.
 
+## Host it on Cloudflare (free)
+
+The site is plain files, so Cloudflare just serves them. No server, no secrets, no settings to fill in.
+Everything it needs is already in this repo: `wrangler.jsonc` (what to upload) and `public/_headers` (safe response headers).
+
+**Option A, from your own computer (simplest, about 3 minutes):**
 ```bash
-npm ci          # install exact versions from package-lock.json
+npm ci                          # install the exact versions (first time only)
+npx wrangler login              # opens your browser once; log in to Cloudflare
+npm run build && npx wrangler deploy
 ```
+The last command prints your address, like `https://site-library.<your-name>.workers.dev`. To update the live site later, run the last command again.
+To change the address, edit `"name"` in `wrangler.jsonc` before the first deploy.
 
-The project lives in `Documents/Anmol/Product-projects/site-library/` (renamed from `Product:projects` on 2026-10-29, because the `:` broke `npm run` and the dev server; see DECISIONS.md D5).
+**Option B, automatic on every push (set up once in the Cloudflare dashboard):**
+1. Workers & Pages, Create application, import a Git repository, and choose this repo.
+   When it asks which repos Cloudflare may read, choose **Only select repositories** and pick only this one.
+2. Build command: `npm run build`. Deploy command: `npx wrangler deploy`. Root directory: leave empty.
+3. Save. From then on, every push to `main` goes live by itself.
+
+**Good to know:**
+- The "People visited" counter is **not** online. It needs `scripts/local-server.mjs`, which only runs on your computer. Online, the page simply shows no counter (no cookie is set either).
+- Sign-in is a design only. It is connected to nothing and says "Accounts are not open yet".
+- Free plan: requests for plain files are free and unlimited per Cloudflare's docs (checked 2026-10-29). Details in `docs/DECISIONS.md`.
+
+## Secrets and safety rules
+
+- **This site needs no secrets today.** `.env.example` shows the pattern for later.
+- **Never commit a `.env` file.** `.gitignore` blocks `.env`, `.env.*`, `.dev.vars`, `*.pem`, `*.key`, `*.p12`.
+- A local `gitleaks` check runs before every commit and every push and stops secrets (set up in `.git/hooks/`; it lives on one computer and is not part of the repo).
+- GitHub Actions (`.github/workflows/ci.yml`) re-runs the type-check, the build and the dependency audit on every push. It uses no secrets.
+- Real keys go in environment variables (a local `.env`, or Cloudflare's dashboard), never in code, logs or screenshots.
+
+## Run it on your computer
+
+You need Node.js 22.23.4 or newer (`node -v` to check), then `npm ci` once.
 
 | Task | Command |
 |---|---|
-| Dev server (live reload while editing) | `npm run dev`, then open the address it prints. It runs in the background; stop it with `npx astro dev stop` |
-| **Run the real site locally (with the page-view counter)** | `npm run local`, then open http://localhost:4321. It builds first, then serves the site and `/api/visits`. Stop with Ctrl+C. It counts unique browsers with a small cookie (named `visited`). The count is kept in `.data/visits.json`; delete that file to reset it to 0. To count yourself again, clear this site's cookies |
-| Run the site locally without the counter | `npm run build && npm run preview -- --port 4321`. Stop with `npx astro preview stop`. No counter shows, because this server has no `/api/visits` |
+| Dev server (live reload while editing) | `npm run dev`, then open the address it prints. Stop it with `npx astro dev stop` |
+| **Run the real site locally (with the counter)** | `npm run local`, then open http://localhost:4321. It builds first, then serves the site and `/api/visits`. Stop with Ctrl+C. The count is kept in `.data/visits.json` (delete the file to reset it to 0) |
+| Run the finished build without the counter | `npm run build && npm run preview -- --port 4321`. Stop with `npx astro preview stop` |
 | Type-check | `npm run check` |
-| Production build | `npm run build` |
+| Production build (makes `dist/`) | `npm run build` |
 | Vulnerability audit | `npm audit` |
 
-**Dev vs preview:** dev rebuilds instantly when you save a file, and shows a small Astro toolbar at the bottom (dev only). Preview serves the finished build, exactly what visitors will get. After changing code, re-run the build to see it in preview.
+Dev shows changes instantly but adds a small toolbar. Preview and `npm run local` serve exactly what visitors get; re-run the build after changing code.
 
 ## Where things are
-| Path | What |
-|---|---|
-| `src/pages/index.astro` | The landing page |
-| `src/layouts/main.astro` | Shared `<head>` and page shell |
-| `src/components/ui/` | Owner-provided components (shadcn convention) |
-| `src/components/landing/` | Our page-specific pieces (e.g. hero content) |
-| `src/styles/global.css` | Design tokens + Tailwind setup |
-| `src/styles/hero.css` | Styles for the hero and buttons |
-| `src/config/site.ts` | Site name and links (one place to change them) |
-| `src/pages/websites.astro`, `sign-in.astro` | The list page (empty for now) and the sign-in page (design only, connected to nothing) |
-| `src/components/auth/AuthShowcase.astro`, `src/config/showcase.ts` | The looping picture columns on the sign-in page, and the cards in them |
-| `src/components/SiteHeader.astro` | The top bar shared by every page |
-| `src/components/scenes/scene.tsx`, `src/styles/scenes.css` | The animated mini screens in the picture boxes (home page and sign-in panel) |
-| `scripts/local-server.mjs` | Local-only server: serves `dist/` and runs the counter at `/api/visits` (no packages). Not used once the site is hosted |
-| `src/components/VisitCounter.tsx`, `src/components/ui/animated-counter.tsx` | The live "people visited" counter in the home header, and the rolling-digit component it uses |
-| `src/scripts/` | `reveal-on-scroll.ts` (starts the box entrance animation), `auth-notice.ts` (the sign-in message) |
-| `src/styles/reveal.css` | The box entrance animation (pure CSS) |
-| `src/config/categories.ts`, `src/config/showcase.ts` | The words and scene for each home box, and for each sign-in feature card |
-| `public/images/` | Self-hosted images |
 
-## Docs map
+```
+site-library/
+├── README.md              you are here
+├── wrangler.jsonc         Cloudflare hosting settings
+├── package.json           commands and dependencies
+├── docs/                  all the project notes (see "Docs" below)
+├── public/                files served as they are: images, favicon, _headers
+├── scripts/               local-server.mjs (counter, local only)
+├── .github/workflows/     ci.yml (automatic checks)
+└── src/
+    ├── pages/             one file per page: index, sign-in, websites
+    ├── layouts/           main.astro (shared page shell)
+    ├── components/        ui/ (supplied components), landing/, auth/, scenes/, SiteHeader, VisitCounter
+    ├── config/            the words: site.ts, categories.ts (home boxes), showcase.ts (sign-in cards)
+    ├── styles/            global.css (colours, Tailwind), hero.css, reveal.css, scenes.css
+    ├── scripts/           small browser scripts (box entrance, sign-in form)
+    └── lib/               utils.ts (class-name helper)
+```
+
+| To change... | Edit |
+|---|---|
+| Site name and links | `src/config/site.ts` |
+| The words and picture of each home box | `src/config/categories.ts` |
+| The feature cards on the sign-in page | `src/config/showcase.ts` |
+| The animated mini screens | `src/components/scenes/scene.tsx` and `src/styles/scenes.css` |
+| Colours and design tokens | `src/styles/global.css` |
+
+## Docs
+
 | File | What's in it |
 |---|---|
-| `project_spec.md` | The product spec |
-| `CONTEXT.md` | Current state, always-do checklist, hard gates, next steps. **Read first.** |
-| `ARCHITECTURE.md` | How the pieces fit |
-| `SECURITY.md` | Threat model, permission table, controls |
-| `DECISIONS.md` | What we chose and why |
-| `TESTING.md` | Test plan and what has been verified |
-| `INCIDENT.md` | What to do when something goes wrong |
-| `COMPONENTS.md` | Component inventory and design tokens |
-| `research_template.csv` | Columns for your research sheet |
+| `docs/CONTEXT.md` | Current state, always-do checklist, hard gates, next steps. **Read first.** |
+| `docs/project_spec.md` | The product spec |
+| `docs/ARCHITECTURE.md` | How the pieces fit |
+| `docs/SECURITY.md` | Threat model, permission table, controls |
+| `docs/DECISIONS.md` | What we chose and why (D1 to D20) |
+| `docs/TESTING.md` | What has been verified, with real results |
+| `docs/INCIDENT.md` | What to do when something goes wrong |
+| `docs/COMPONENTS.md` | Component inventory and design tokens |
+| `docs/research_template.csv` | Columns for your research sheet |
 
-## Putting it online (Cloudflare)
-
-The site is plain files, so it is hosted with Cloudflare "Workers static assets" (free). Settings live in `wrangler.jsonc`; extra response headers live in `public/_headers`.
-
-- **Build command:** `npm run build` (makes the `dist/` folder).
-- **Deploy command:** `npx wrangler deploy` (uploads `dist/`).
-- **From your computer:** `npx wrangler login` (opens a browser once), then `npm run build && npx wrangler deploy`.
-- **Automatic on every push:** in the Cloudflare dashboard, Workers & Pages, Create application, import the GitHub repo, and use the two commands above.
-- **Secrets:** none are needed today. If one is ever needed, put it in an environment variable (a local `.env` file, or the Cloudflare dashboard), never in the code. `.env` files are blocked by `.gitignore` and by a local pre-commit check (`gitleaks`).
-- **The visitor counter does not work online.** It needs `scripts/local-server.mjs`. Online, the page simply shows no counter (DECISIONS D12, D15, D21).
+Hard gates before launch (see `docs/CONTEXT.md`): a lawyer must review the privacy policy and the 18+ rule before real accounts, and must say whether the unique-visitor cookie needs a consent notice before the counter goes online.

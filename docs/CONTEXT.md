@@ -5,6 +5,9 @@ Read this and `project_spec.md` at the start of every task. Update this file at 
 ## Project goal
 A free, tested, ranked library of useful websites. V1 has one category, Frontend Components. Full spec: `project_spec.md`.
 
+## Where the files are (2026-10-29)
+All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: private, `codingcrux0/site-library` (see DECISIONS D21 for status).
+
 ## Current state (2026-10-28)
 - Project folder: `Documents/Anmol/Product-projects/site-library/` (git initialised, branch `main`, **no commits yet**).
 - M0 mostly done: stack (D1), threat model (SECURITY.md), docs, `.gitignore`, `research_template.csv`. Framework FINAL: Astro 7 + React islands + Tailwind 4 + shadcn structure (D2, D2a).
