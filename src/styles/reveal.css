@@ -1,0 +1,139 @@
+/*
+ * Entrance animation for the category boxes (used by components/ui/stacked-sections.tsx).
+ * Pure CSS. Only transform and opacity change, so the browser animates it on the graphics chip, with no layout work.
+ *
+ * Two ways to switch it on:
+ * - Scroll boxes: src/scripts/reveal-on-scroll.ts sets data-reveal="ready" on <html> (only when motion is allowed).
+ *   Until then nothing is hidden, so with JavaScript off or "reduce motion" on, everything simply shows.
+ *   The same script sets data-in on a box when it scrolls into view, which starts the animations below.
+ * - Pages already in view on arrival (sign-in): put class "rv-load" on a wrapper. It plays once on load with no
+ *   script. The animation's "backwards" fill keeps things hidden during their delay, so nothing flashes.
+ */
+@layer components {
+  :root {
+    --rv-ease: cubic-bezier(0.87, 0, 0.13, 1); /* "expo in-out": slow start, fast middle, slow end */
+    --rv-x: 4rem; /* how far the picture and words travel */
+  }
+  @media (max-width: 767px) {
+    :root {
+      --rv-x: 1.5rem;
+    }
+  }
+
+  /* Hidden until their box is in view. */
+  [data-reveal] .rv-slide,
+  [data-reveal] .rv-fade,
+  [data-reveal] .rv-text {
+    opacity: 0;
+  }
+
+  /* The black bar that sweeps across a heading or paragraph. It lives on the wrapper's ::after. */
+  .rv-block {
+    position: relative;
+    overflow: hidden;
+    /* Room for letters that hang below the line (g, y, p), which overflow:hidden would otherwise cut. */
+    padding-block: 0.08em;
+    margin-block: -0.08em;
+  }
+  .rv-block::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ink-primary);
+    transform: translateX(-101%);
+  }
+
+  .rv-slide[data-from="left"] {
+    --rv-from: calc(var(--rv-x) * -1);
+  }
+  .rv-slide[data-from="right"] {
+    --rv-from: var(--rv-x);
+  }
+  .rv-delay-1 {
+    --rv-delay: 0.2s;
+  }
+  .rv-delay-2 {
+    --rv-delay: 0.35s;
+  }
+  /* Fade-ins that follow each other (form fields). Default is 0.65s. */
+  .rv-fade-1 {
+    --rv-fade-delay: 0.65s;
+  }
+  .rv-fade-2 {
+    --rv-fade-delay: 0.75s;
+  }
+  .rv-fade-3 {
+    --rv-fade-delay: 0.85s;
+  }
+  .rv-fade-4 {
+    --rv-fade-delay: 0.95s;
+  }
+
+  /* "backwards" fill = the animation only controls the wait and the movement. Afterwards the normal styles
+     apply again, so the button's hover and press effects keep working. */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-in] .rv-slide,
+    .rv-load .rv-slide {
+      opacity: 1;
+      animation: rv-slide 0.9s var(--rv-ease) backwards;
+    }
+    [data-in] .rv-fade,
+    .rv-load .rv-fade {
+      opacity: 1;
+      animation: rv-fade 0.7s var(--rv-ease) var(--rv-fade-delay, 0.65s) backwards;
+    }
+    /* For something that only appears after data arrives (the page-view counter). Plays when it is added. */
+    .rv-pop {
+      animation: rv-fade 0.7s var(--rv-ease) backwards;
+    }
+    /* A quick fade when the sign-in card switches view. Short and ease-out, so it feels instant, not slow. */
+    .rv-swap {
+      animation: rv-fade 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+    [data-in] .rv-block::after,
+    .rv-load .rv-block::after {
+      animation: rv-bar 1s var(--rv-ease) var(--rv-delay, 0s) backwards;
+    }
+    [data-in] .rv-text,
+    .rv-load .rv-text {
+      opacity: 1;
+      animation: rv-text 1s linear var(--rv-delay, 0s) backwards;
+    }
+  }
+
+  @keyframes rv-slide {
+    from {
+      opacity: 0;
+      transform: translate3d(var(--rv-from), 0, 0);
+    }
+  }
+  @keyframes rv-fade {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 0.75rem, 0);
+    }
+  }
+  /* The bar comes in from the left, covers the text, then leaves to the right. */
+  @keyframes rv-bar {
+    0% {
+      transform: translateX(-101%);
+    }
+    45% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(101%);
+    }
+  }
+  /* The text switches on at the moment the bar fully covers it. */
+  @keyframes rv-text {
+    0%,
+    45% {
+      opacity: 0;
+    }
+    45.01%,
+    100% {
+      opacity: 1;
+    }
+  }
+}

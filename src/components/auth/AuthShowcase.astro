@@ -1,0 +1,106 @@
+---
+// The left side of the sign-in page: two columns of feature cards that drift in opposite directions on their own,
+// like a looping video. Plain HTML + CSS only, so it sends no JavaScript. Each card holds an animated mini screen
+// (components/scenes/scene.tsx) with a title and one line under it. The cards come from src/config/showcase.ts.
+import Scene from '@/components/scenes/scene';
+import { SHOWCASE } from '@/config/showcase';
+import { cn } from '@/lib/utils';
+
+// Cards alternate between the columns: 1st, 3rd... drift up; 2nd, 4th... drift down.
+const columns = [
+	{ direction: 'up', cards: SHOWCASE.filter((_, i) => i % 2 === 0) },
+	{ direction: 'down', cards: SHOWCASE.filter((_, i) => i % 2 === 1) },
+];
+---
+
+<!-- Hidden on phones (display:none also stops the animation and the image downloads). -->
+<aside class="rv-slide relative hidden md:block" data-from="left">
+	<div class="showcase absolute inset-4 overflow-hidden rounded-3xl border border-line-subtle bg-surface-sunken">
+		<div class="absolute inset-0 flex gap-4 px-4">
+			{
+				columns.map((column) => (
+					<div class="relative min-w-0 flex-1 overflow-hidden">
+						<div class={`showcase-track showcase-${column.direction}`}>
+							{/* Three identical copies back to back. The track moves by exactly one copy, then starts over, so the jump is invisible.
+							    Three, not two, so a tall narrow window (small cards, tall panel) never runs out of cards. (Each copy holds animated scenes, so fewer copies = less work for the browser.) */}
+							{[0, 1, 2].map((copy) => (
+								<div class="flex flex-col gap-4 pb-4" aria-hidden={copy > 0 ? 'true' : undefined}>
+									{column.cards.map((card) => (
+										<div class="overflow-hidden rounded-2xl border border-line-strong/50 bg-white/80">
+											<div class={cn('relative aspect-[4/3] w-full', card.tint)}>
+												{card.image ? (
+													<img
+														src={card.image.src}
+														alt={card.image.alt}
+														width={600}
+														height={450}
+														loading="lazy"
+														decoding="async"
+														class="size-full object-cover"
+													/>
+												) : (
+													<Scene name={card.scene} />
+												)}
+											</div>
+											<div class="px-3.5 py-3">
+												<p class="text-sm font-semibold tracking-tight text-ink-primary">{card.title}</p>
+												<p class="mt-0.5 text-xs leading-snug text-ink-secondary">{card.caption}</p>
+											</div>
+										</div>
+									))}
+								</div>
+							))}
+						</div>
+					</div>
+				))
+			}
+		</div>
+		<!-- Soft fade at the top and bottom, so cards glide in and out instead of being cut.
+		     They get their own rounded corners: Chrome puts them on a separate layer (they overlap the moving columns), and that layer ignores the parent's rounded clip. -->
+		<div class="pointer-events-none absolute inset-x-0 top-0 h-28 rounded-t-3xl bg-linear-to-b from-surface-sunken to-transparent"></div>
+		<div class="pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-3xl bg-linear-to-t from-surface-sunken to-transparent"></div>
+		<!-- Honest label: these are the planned features of the site, none of them is live yet. -->
+		<p class="absolute top-4 left-4 z-10 rounded-full border border-line-subtle bg-white/90 px-3 py-1 text-xs font-medium text-ink-secondary">
+			What's being built
+		</p>
+	</div>
+</aside>
+
+<style>
+	/* Only transform changes, so the browser moves these on the graphics chip: no layout or paint work each frame.
+	   Nothing pauses it (a hover-pause felt like the panel was "stuck"), and it drifts about 40 to 50 px a second:
+	   slower than that, the movement is under one pixel a frame and looks jerky. */
+	.showcase-track {
+		will-change: transform;
+		animation-timing-function: linear;
+		animation-iteration-count: infinite;
+	}
+	.showcase-up {
+		animation-name: showcase-up;
+		animation-duration: 26s;
+	}
+	.showcase-down {
+		animation-name: showcase-down;
+		animation-duration: 32s;
+	}
+	/* Move by a third of the track: exactly one of the three copies. */
+	@keyframes showcase-up {
+		to {
+			transform: translate3d(0, -33.3333%, 0);
+		}
+	}
+	@keyframes showcase-down {
+		from {
+			transform: translate3d(0, -33.3333%, 0);
+		}
+		to {
+			transform: translate3d(0, 0, 0);
+		}
+	}
+	/* People who asked for less motion get still columns. */
+	@media (prefers-reduced-motion: reduce) {
+		.showcase-track {
+			animation: none;
+		}
+	}
+</style>

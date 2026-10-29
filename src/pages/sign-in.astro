@@ -1,0 +1,174 @@
+---
+// Sign-in page, adapted from a supplied login-form component.
+// IMPORTANT: the form is NOT connected to anything yet. Accounts stay closed until a qualified professional has
+// reviewed the privacy policy, the 18+ rule and the DPDP/GDPR notes (CONTEXT.md, LEGAL GATE). The script
+// (src/scripts/auth-form.ts) only switches between the three views and shows a message, so nothing typed here
+// is sent or stored.
+//
+// Three views on one card, switched without leaving the page: sign in, create account, reset password.
+// Every element that belongs to only some views carries data-for="signin signup" and so on; the script shows
+// and hides them. The no-JavaScript default is the sign-in view.
+import { Lock, Mail } from 'lucide-react';
+import AuthShowcase from '@/components/auth/AuthShowcase.astro';
+import { SITE } from '@/config/site';
+import Layout from '@/layouts/main.astro';
+
+// Logos from Simple Icons 16.36.0 (CC0), inlined so nothing loads from outside.
+// When real sign-in is added, check Google's and GitHub's branding rules for sign-in buttons.
+const PROVIDERS = [
+	{
+		name: 'GitHub',
+		path: 'M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12',
+	},
+	{
+		name: 'Google',
+		path: 'M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z',
+	},
+];
+
+// The words of each view, in one place.
+const MODES = {
+	signin: {
+		title: 'Sign in',
+		sub: 'Accounts are not open yet.',
+		submit: 'Sign in',
+		notice: 'Nothing you typed was sent or saved. Accounts open after our privacy checks are done.',
+		footer: { text: 'New here?', action: 'Create an account', to: 'signup' },
+	},
+	signup: {
+		title: 'Create account',
+		sub: 'Accounts are not open yet. This is how joining will look.',
+		submit: 'Create account',
+		notice: 'Nothing you typed was sent or saved. Accounts open after our privacy checks are done.',
+		footer: { text: 'Already have an account?', action: 'Sign in', to: 'signin' },
+	},
+	reset: {
+		title: 'Reset password',
+		sub: 'Accounts are not open yet, so nothing will be sent.',
+		submit: 'Send reset link',
+		notice: 'No email was sent. Password resets will work once accounts open.',
+		footer: { text: 'Remembered it?', action: 'Back to sign in', to: 'signin' },
+	},
+} as const;
+const MODE_NAMES = Object.keys(MODES) as (keyof typeof MODES)[];
+
+// Small text buttons ("Forgot password?", "Create an account"). Real <button>s, so the keyboard works.
+const LINK =
+	'rounded-sm underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus';
+
+// Shared look of the two text boxes. The ring shows when the input inside has focus.
+const FIELD =
+	'flex h-12 w-full items-center gap-3 rounded-full border border-line-strong bg-white px-5 text-ink-muted transition-colors focus-within:border-transparent focus-within:outline-2 focus-within:outline-focus';
+const INPUT = 'h-full w-full bg-transparent text-sm text-ink-primary outline-none placeholder:text-ink-muted';
+---
+
+<Layout title={`Sign in | ${SITE.name}`} description="Sign in, create an account or reset your password. Accounts are not open yet.">
+	<!-- rv-load: the entrance animation (src/styles/reveal.css) plays once on arrival. overflow-hidden hides the sideways slide. -->
+	<main class="rv-load grid min-h-dvh overflow-hidden md:grid-cols-2">
+		<AuthShowcase />
+
+		<div class="flex flex-col px-6 py-6">
+			<a href="/" class="self-start text-sm text-ink-secondary transition-colors hover:text-ink-primary">&larr; Home</a>
+
+			<!-- Top-aligned, not centred: the views differ in height, and a centred card would jump when switching. -->
+			<div class="rv-slide flex flex-1 items-start justify-center pt-[clamp(1rem,8vh,5rem)] pb-10" data-from="right">
+				<!-- method="post" so that, if JavaScript is off, a submit can never put the email or password into the address bar. -->
+				<form data-auth-form data-mode="signin" method="post" action="/sign-in" class="group flex w-full max-w-sm flex-col items-center">
+					<!-- data-swap: re-plays a short fade each time the view changes. -->
+					<div data-swap class="flex w-full flex-col items-center">
+						{
+							MODE_NAMES.map((name) => (
+								<>
+									<h1 data-for={name} hidden={name !== 'signin'} class="rv-block rv-delay-1 text-4xl font-semibold tracking-tight">
+										<span class="rv-text">{MODES[name].title}</span>
+									</h1>
+									<p data-for={name} hidden={name !== 'signin'} class="rv-block rv-delay-2 mt-3 text-center text-sm text-ink-secondary">
+										<span class="rv-text">{MODES[name].sub}</span>
+									</p>
+								</>
+							))
+						}
+
+						<div data-for="signin signup" class="rv-fade rv-fade-1 mt-8 grid w-full grid-cols-2 gap-3">
+							{
+								PROVIDERS.map((provider) => (
+									<button
+										type="button"
+										data-provider={provider.name}
+										aria-label={`Continue with ${provider.name}`}
+										class="flex h-12 items-center justify-center gap-2 rounded-full border border-line-strong bg-white text-sm font-medium text-ink-primary transition-[background-color,transform] duration-150 hover:bg-surface-sunken active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100"
+									>
+										<svg viewBox="0 0 24 24" class="size-5" fill="currentColor" aria-hidden="true">
+											<path d={provider.path} />
+										</svg>
+										{provider.name}
+									</button>
+								))
+							}
+						</div>
+
+						<div data-for="signin signup" class="rv-fade rv-fade-2 my-5 flex w-full items-center gap-4" aria-hidden="true">
+							<div class="h-px w-full bg-line-subtle"></div>
+							<p class="text-sm text-nowrap text-ink-muted">Or with email</p>
+							<div class="h-px w-full bg-line-subtle"></div>
+						</div>
+
+						<!-- In the reset view there are no provider buttons, so the email box needs its own top gap. -->
+						<label class={`rv-fade rv-fade-3 ${FIELD} group-data-[mode=reset]:mt-8`}>
+							<span class="sr-only">Email</span>
+							<Mail className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+							<input type="email" name="email" autocomplete="email" placeholder="Email" required class={INPUT} />
+						</label>
+
+						<label data-for="signin signup" class={`rv-fade rv-fade-3 mt-4 ${FIELD}`}>
+							<span class="sr-only">Password</span>
+							<Lock className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+							<input type="password" name="password" autocomplete="current-password" placeholder="Password" required class={INPUT} />
+						</label>
+
+						<div data-for="signin" class="rv-fade rv-fade-3 mt-3 flex w-full justify-end text-sm text-ink-secondary">
+							<button type="button" data-mode-to="reset" class={LINK}>Forgot password?</button>
+						</div>
+						<p data-for="signup" hidden class="mt-3 w-full px-5 text-left text-xs text-ink-muted">Use at least 8 characters.</p>
+
+						<!-- ONE submit button; only its words change. (Several submit buttons could leave a hidden one as the browser's "default button", and Enter would silently do nothing.) -->
+						<button type="submit" class="rv-fade rv-fade-4 rr-btn rr-btn--primary rr-btn--lg rr-btn--pill mt-6 w-full">
+							{
+								MODE_NAMES.map((name) => (
+									<span data-for={name} hidden={name !== 'signin'}>
+										{MODES[name].submit}
+									</span>
+								))
+							}
+						</button>
+
+						{
+							MODE_NAMES.map((name) => (
+								<p data-for={name} hidden={name !== 'signin'} class="rv-fade rv-fade-4 mt-6 text-center text-sm text-ink-secondary">
+									{MODES[name].footer.text}{' '}
+									<button type="button" data-mode-to={MODES[name].footer.to} class={`font-semibold text-ink-primary ${LINK}`}>
+										{MODES[name].footer.action}
+									</button>
+								</p>
+							))
+						}
+					</div>
+
+					<!-- Filled in by the script when someone tries to sign in, then cleared after a few seconds. Pinned to the bottom of the screen
+					     (not placed under the form) so it is always in view, even on a short window where the form fills the screen. -->
+					<p
+						id="auth-notice"
+						role="status"
+						data-notice-signin={MODES.signin.notice}
+						data-notice-signup={MODES.signup.notice}
+						data-notice-reset={MODES.reset.notice}
+						class="rv-swap fixed inset-x-4 bottom-4 z-50 mx-auto max-w-sm rounded-2xl border border-line-subtle bg-tint-sand px-4 py-3 text-center text-sm text-ink-primary shadow-lg empty:hidden"
+					></p>
+				</form>
+			</div>
+		</div>
+	</main>
+	<script>
+		import '@/scripts/auth-form';
+	</script>
+</Layout>

@@ -1,0 +1,40 @@
+---
+// The top bar on the landing and list pages (sign-in has its own split layout).
+// Left: the X logo and link. Right: whatever the page puts inside <SiteHeader>…</SiteHeader>
+// (the home page puts the live page-view counter there). With nothing inside, it shows "How we test".
+import { SITE } from '@/config/site';
+
+// The X logo (Simple Icons 16.36.0, CC0). X is a trademark of its owner.
+const X_LOGO =
+	'M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z';
+---
+
+<header class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5">
+	<!-- "group": hovering or tabbing to anywhere on the link lights up the logo. -->
+	<a
+		href={SITE.xUrl}
+		rel="noopener noreferrer"
+		aria-label="Follow the build on X"
+		class="group flex items-center gap-3 rounded-full text-sm font-semibold tracking-tight text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
+	>
+		<!--
+			Only transform and opacity change on hover, so it runs on the graphics chip.
+			The glow is a blurred copy of the circle behind it that fades in; it is not a box-shadow animation.
+		-->
+		<span
+			class="relative flex size-9 items-center justify-center rounded-full bg-ink-primary text-white transition-transform duration-300 ease-out before:absolute before:inset-0 isolate before:-z-10 before:rounded-full before:bg-ink-primary before:opacity-0 before:blur-lg before:transition-opacity before:duration-300 group-hover:scale-115 group-hover:before:opacity-60 group-focus-visible:scale-115 group-focus-visible:before:opacity-60 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100"
+		>
+			<svg viewBox="0 0 24 24" class="size-4" fill="currentColor" aria-hidden="true"><path d={X_LOGO}></path></svg>
+		</span>
+		<span class="hidden transition-opacity group-hover:opacity-70 sm:inline">
+			Follow the build on X <span aria-hidden="true">↗</span>
+		</span>
+	</a>
+
+	<slot>
+		<!-- "/#..." works from every page. -->
+		<a href="/#how-we-test" class="text-sm text-ink-secondary transition-colors hover:text-ink-primary">
+			How we test
+		</a>
+	</slot>
+</header>

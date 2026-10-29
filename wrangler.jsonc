@@ -1,0 +1,12 @@
+// Cloudflare hosting settings (Workers "static assets"): upload everything in dist/ and serve it as-is.
+// No Worker code runs, so every page request is a plain file and costs nothing.
+// "name" becomes the free address: <name>.<your-account>.workers.dev. Change it before the first deploy if you want another one.
+// compatibility_date = the day this config was written; it only matters for Worker code, which we do not have.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "site-library",
+  "compatibility_date": "2026-10-29",
+  "assets": {
+    "directory": "./dist"
+  }
+}

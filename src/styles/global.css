@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@import "./hero.css";
+@import "./reveal.css";
+@import "./scenes.css";
+
+/* ---------- Design tokens (from the provided component kit) ---------- */
+:root {
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --radius-xs: 4px;
+  --radius-full: 9999px;
+  --duration-fast: 140ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --control-height-md: 40px;
+  --control-height-lg: 48px;
+  --control-radius: 8px;
+  --focus-ring-width: 2px;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ---------- Added by us: the kit used these but never defined them ---------- */
+
+/* Raw palette: the light theme below points at these names. */
+:root {
+  --gray-1: #f7f8fa;
+  --gray-3: #e3e6eb;
+  --gray-4: #cbd0d8;
+  --gray-7: #4b5260;
+  --gray-8: #2e333c;
+  --blue-6: #2b52ff;
+  --redrob-black: #0b0d10;
+}
+
+/* Light theme: bright, white, minimal. Text colors all pass WCAG AA contrast on white
+   (ink-muted #5f6673 is about 5.8:1; the minimum for normal text is 4.5:1). */
+:root {
+  --surface-base: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: var(--gray-1);
+  --surface-brand-subtle: #eef2ff;
+  --border-subtle: var(--gray-3);
+  --border-strong: var(--gray-4);
+  --ink-primary: var(--redrob-black);
+  --ink-secondary: var(--gray-7);
+  --ink-muted: #5f6673;
+  --ink-brand: var(--blue-6);
+  --action-primary: var(--redrob-black);
+  --action-primary-hover: var(--gray-8);
+  --action-primary-ink: #ffffff;
+  --focus-ring: var(--blue-6);
+  /* Soft tints for the category boxes. Dark text on each is 6.6:1 or better (checked by calculation). */
+  --tint-sky: #e6eefc;
+  --tint-sand: #f4eee3;
+  --tint-sage: #e5efe7;
+  --tint-lilac: #eeeaf7;
+}
+
+
+/* Expose the tokens as Tailwind classes: text-ink-muted, bg-surface-base, border-line-subtle... */
+@theme inline {
+  --color-surface-base: var(--surface-base);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-ink-primary: var(--ink-primary);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-brand: var(--ink-brand);
+  --color-line-subtle: var(--border-subtle);
+  --color-line-strong: var(--border-strong);
+  --color-focus: var(--focus-ring);
+  --color-tint-sky: var(--tint-sky);
+  --color-tint-sand: var(--tint-sand);
+  --color-tint-sage: var(--tint-sage);
+  --color-tint-lilac: var(--tint-lilac);
+}
+
+@layer base {
+  html {
+    background: var(--surface-base);
+    color: var(--ink-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--surface-brand-subtle);
+  }
+}

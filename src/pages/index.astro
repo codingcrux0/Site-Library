@@ -1,0 +1,98 @@
+---
+import LandingHero from '@/components/landing/LandingHero';
+import SiteHeader from '@/components/SiteHeader.astro';
+import VisitCounter from '@/components/VisitCounter';
+import Skiper39 from '@/components/ui/skiper39';
+import StackedSections from '@/components/ui/stacked-sections';
+import Skiper31 from '@/components/ui/text-scroll-animation';
+import { CATEGORIES } from '@/config/categories';
+import { SITE } from '@/config/site';
+import Layout from '@/layouts/main.astro';
+
+// The three promises from the spec ("our edge"). Kept as data so the markup stays short.
+const promises = [
+	{
+		title: 'Tested, not just listed',
+		body: 'Every entry is tried by hand and shows the date it was tested.',
+	},
+	{
+		title: 'The catch, up front',
+		body: 'The limit, the paywall or the problem, in plain words. Not marketing copy.',
+	},
+	{
+		title: 'Two separate scores',
+		body: 'My score from testing and the community score from users. Never mixed.',
+	},
+];
+
+const year = new Date().getFullYear();
+---
+
+<Layout title={`${SITE.name}: useful websites, tested by hand`} description={SITE.description}>
+	<SiteHeader>
+		<!-- client:idle = load its JavaScript once the browser has finished the important work, so the hero stays instant. -->
+		<VisitCounter client:idle />
+	</SiteHeader>
+
+	<main>
+		<div class="mx-auto max-w-6xl px-6">
+			<!-- No client:* directive, so this is plain HTML with zero JavaScript. -->
+			<LandingHero />
+		</div>
+
+		<!-- The crowd. client:visible = only load its JavaScript when it scrolls into view. -->
+		<!-- Fixed height on phones (screen-height units left a big empty gap there). -->
+		<div class="h-[440px] sm:h-[clamp(520px,70vh,680px)]">
+			<Skiper39 client:visible label="Built for builders" />
+		</div>
+
+		<!-- Scroll animation: sentences assemble letter by letter, with the framework logos in the middle. -->
+		<Skiper31 client:visible />
+
+		<!-- Category boxes that stack as you scroll. No client:* directive = plain HTML + CSS. -->
+		<StackedSections items={CATEGORIES} />
+
+		<section
+			id="how-we-test"
+			aria-labelledby="how-we-test-title"
+			class="mx-auto max-w-6xl scroll-mt-6 px-6 py-20 sm:py-24"
+		>
+			<h2
+				id="how-we-test-title"
+				class="text-xs font-medium tracking-[0.14em] text-ink-muted uppercase"
+			>
+				How we test
+			</h2>
+			<ol class="mt-10 grid gap-10 sm:grid-cols-3 sm:gap-12">
+				{
+					promises.map((item, index) => (
+						<li>
+							<span class="text-base font-bold text-ink-primary tabular-nums">0{index + 1}</span>
+							<h3 class="mt-3 text-lg font-semibold tracking-tight text-ink-primary">{item.title}</h3>
+							<p class="mt-2 leading-relaxed text-ink-secondary">{item.body}</p>
+						</li>
+					))
+				}
+			</ol>
+		</section>
+	</main>
+
+	<footer class="border-t border-line-subtle">
+		<div class="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-8 text-sm text-ink-muted sm:flex-row sm:justify-between">
+			<p>&copy; {year} {SITE.name}</p>
+			<!-- Credit required by the Skiper UI free license. -->
+			<!-- {' '} = an explicit space; Astro drops the line break between text and a link. -->
+			<p>
+				Crowd animation adapted from{' '}
+				<a href="https://skiper-ui.com" rel="noopener noreferrer" class="underline underline-offset-4 hover:text-ink-primary">Skiper UI</a>.
+				Illustrations by{' '}
+				<a href="https://www.openpeeps.com/" rel="noopener noreferrer" class="underline underline-offset-4 hover:text-ink-primary">Open Peeps</a>.
+			</p>
+		</div>
+	</footer>
+
+	<!-- Starts each category box's entrance animation when it scrolls into view. -->
+	<script>
+		import '@/scripts/reveal-on-scroll';
+	</script>
+</Layout>

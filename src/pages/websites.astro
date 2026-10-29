@@ -1,0 +1,19 @@
+---
+import SiteHeader from '@/components/SiteHeader.astro';
+import { SITE } from '@/config/site';
+import Layout from '@/layouts/main.astro';
+---
+
+<Layout title={`The list | ${SITE.name}`} description="The list of tested websites.">
+	<SiteHeader />
+	<main class="mx-auto max-w-6xl px-6 py-16 sm:py-24">
+		<a href="/" class="text-sm text-ink-secondary transition-colors hover:text-ink-primary">&larr; Home</a>
+		<h1 class="mt-8 text-[clamp(2.25rem,5vw,3.75rem)] leading-[1.05] font-bold tracking-tight">The list</h1>
+
+		<!-- Honest empty state. The rule: nothing is listed until it has been tested by hand and dated. -->
+		<p class="mt-6 max-w-xl text-lg leading-relaxed text-ink-secondary">
+			Nothing is listed yet. Each website is tried by hand first, then dated and scored, so the first
+			entries appear once they have been tested.
+		</p>
+	</main>
+</Layout>

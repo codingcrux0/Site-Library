@@ -1,0 +1,13 @@
+# Extra response headers, applied by Cloudflare to every file (public/ is copied into dist/ by the build).
+# Safe, standard ones only. A Content-Security-Policy is NOT here yet: Astro writes small inline scripts,
+# so it needs hashes, and a wrong policy would silently break the page. It is on the to-do list (CONTEXT.md).
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+# Build files have fingerprinted names (the name changes when the content does), so browsers can keep them for a year.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

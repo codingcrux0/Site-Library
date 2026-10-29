@@ -1,0 +1,210 @@
+# TESTING.md
+
+Status: **plan only (M0).** No tests exist yet, and no test tools are installed.
+
+## Proposed tools (each needs your approval before install)
+| Tool | Tests what | Why this one |
+|---|---|---|
+| Vitest (npm 5.0.5 as of 2026-10-28) | Small logic: quiz rules, score totals, CSV validation | Fast, works with Astro/Vite |
+| Supabase permission tests | RLS: wrong user, logged out, privilege escalation | Proves the permission table really holds |
+| Playwright (npm 1.64.1) | End-to-end flows in real browsers, incl. mobile sizes | Free, multi-browser |
+| axe (via Playwright) | Accessibility problems | Industry standard (verify package choice) |
+| Lighthouse | Performance, Core Web Vitals | Free, from Google |
+| npm audit + gitleaks + Dependabot | Vulnerable packages, leaked secrets | Free |
+| OWASP ZAP baseline scan | Missing headers, common web issues | Free dynamic scan (verify current tooling) |
+
+**Catch:** Supabase's local dev setup needs Docker, which isn't installed. The other route is running permission tests against the free **dev** Supabase project. We decide in M1.
+
+## Must-have negative tests (from the security floor)
+- User B reads or edits user A's private list, preferences or rating: must fail.
+- Logged-out user writes anything except submissions/reports: must fail.
+- Normal user calls admin actions or reads drafts/private_notes: must fail.
+- Second rating on the same entry: must update, never duplicate.
+- XSS payloads in feedback, list names, display names: shown as plain text.
+- Oversized input, empty input, emoji/Hindi text, double-submit.
+- Outbound redirect with a URL in the query string: must not redirect there.
+- Repeated requests: rate limit kicks in.
+
+## Verification log
+### 2026-10-28: landing page
+| Check | Result |
+|---|---|
+| `astro check` | 0 errors, 0 warnings, 0 hints (11 files) |
+| `tsc --noEmit` | exit code 0 |
+| `astro build` | 1 page built, static output |
+| `npm audit` | 0 vulnerabilities |
+| Install scripts | none unreviewed (`fsevents` denied) |
+| Third-party requests on page load | none (checked the built HTML) |
+| Browser console | no messages (headless Chrome) |
+| Visual check, headless Chrome screenshots | desktop 1440px, tablet 768px, phone 390px (in a 390px frame, because headless Chrome on Mac has a minimum window width) |
+| Reduced motion (`--force-prefers-reduced-motion`) | crowd frozen, button shows "play" |
+| JS sizes (gzipped) | React runtime 64.3 KB, crowd + GSAP 29.6 KB, Astro island loader 3.0 KB, CSS 5.2 KB. Hero: 0 KB |
+
+### 2026-10-28: scroll animation + crowd head fix
+A throwaway Chrome DevTools-protocol script (`/tmp/shots/cdp.mjs`, not in the repo, no dependencies) set exact screen sizes, scrolled like a person, toggled reduced motion and collected console errors.
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` / `astro check` / build / `npm audit` | exit 0 / 0 errors / complete / 0 vulnerabilities |
+| Laptop 1440×900: crowd heads | not cut off; figures start below the caption line |
+| Laptop: text and logos mid-scroll and centred | animate mid-scroll, fully assembled when centred |
+| Phone 390×844 (true mobile emulation) | page width = 390 (no sideways scroll); text on one line; logos in a 3×2 grid; heads not cut off |
+| Reduced motion | **bug found and fixed**: letters were frozen scattered (server HTML style kept on hydration). Now a plain still version; Lenis off; crowd frozen with play button |
+| Console (all runs) | no errors or warnings |
+
+### 2026-10-29: after renaming the folder to `Product-projects`
+| Check | Result |
+|---|---|
+| `npm run check` (failed before the rename) | exit 0; 0 errors, 0 warnings, 0 hints (13 files) |
+| `npm run build` | exit 0, 1 page built |
+| `npm audit` | 0 vulnerabilities |
+| `npm run dev` (broken before) | `/`, `/@vite/client`, crowd image all 200; Chrome 1440×900: crowd draws, heads not cut off, scroll text animates, Lenis on, no console errors or warnings |
+| Old path through the shortcut | resolves to the new folder; git status unchanged (18 untracked, 0 commits) |
+| Preview | http://localhost:4321 returns 200 with the latest build |
+
+### 2026-10-29: longer scroll text + category boxes
+| Check | Result |
+|---|---|
+| `npm run check` / `npm run build` / `npm audit` | exit 0 · 0 errors, 0 warnings, 0 hints / complete / 0 vulnerabilities |
+| New JavaScript from the boxes | none (no new file in `dist/_astro`) |
+| External addresses in the built page | only plain links (Skiper UI, Open Peeps, X); nothing is loaded from outside |
+| Chrome 1440×900 | 3 new sentences assemble; boxes stack with the next sliding over the previous; no console errors |
+| Chrome 390×844 (phone emulation) | page width 390, no sideways scroll; sentences wrap between words |
+| Chrome 1366×640 (short laptop) | box content fits |
+| Reduced motion | text shown still, Lenis off, boxes unchanged |
+| Button look | checked with a **temporary** link, then reverted (0 matches of the test link in the built page) |
+| Text contrast on the 4 tints | calculated: 6.6:1 or better (body), 4.9:1 or better (small labels) |
+| Rough grep for secrets | only the words "design tokens"; **not a real scan** (gitleaks not approved) |
+
+### 2026-10-29: header, new pages, box animation, cleanup
+| Check | Result |
+|---|---|
+| `npm run check` / `npm run build` / `npm audit` | exit 0, 0 errors, 0 warnings, 0 hints / 3 pages built / 0 vulnerabilities |
+| Gzipped size, before to after | JS 144.0 to 143.9 KB, CSS 6.5 to 6.9 KB, HTML 6.3 to 7.1 KB (HTML grew from the 4 boxes' markup and the 0.5 KB inline script) |
+| Chrome 1440×900 | boxes alternate sides; mid-animation shot shows the bar sweep and the picture sliding in; no console errors |
+| Chrome 390×844, 360×640 (small phone), 1366×640 (short laptop) | content fits in one screen; no sideways scroll |
+| Replay test | `data-in` went false, true, false, true as I scrolled to a box, back to the top, and to the box again |
+| Reduced motion | nothing hidden (`ready` flag never set, opacities 1), Lenis off |
+| Frame times, scrolling the whole page at about 2400 px/s | laptop and phone (even with the CPU slowed 4x and 6x): 161 and 156 frames, every one 16.7 ms, 0 frames over 33 ms |
+| Is that test able to fail? | yes: with a deliberate 40 ms stall per frame it reported 84 slow frames, worst 50 ms |
+| Risky patterns in `src` (innerHTML, eval, storage, cookies) | none; every external link has `rel="noopener noreferrer"` |
+| Unused files and images | none: every file and image is referenced |
+
+**Caveat on the frame test:** it ran in headless Chrome on this Mac. It shows the page's JavaScript never blocks a frame, but not graphics-chip speed on a real phone. Lighthouse and real devices are still to do.
+
+### 2026-10-29: scroll pause + sign-in page
+| Check | Result |
+|---|---|
+| `npm run check` | 0 errors, 0 warnings, 0 hints (22 files). It caught a real mistake first (React icons take `className`, not `class`), now fixed |
+| `npm run build` / `npm audit` | 3 pages built / 0 vulnerabilities |
+| Scroll pause (laptop 1440×900) | box 1 stays pinned for 720 px of scrolling before box 2 appears; box 2's entrance starts when its top edge is 15% up. Same on a 390×844 phone |
+| Replay | `0000` → `1110` → `0000` → `1100` (boxes reset when scrolled past upwards, play again) |
+| Sign-in entrance timeline | panel 0.02 → 1.00 and form likewise within about 0.8 s; heading swept in at 0.8 s; fields staggered; everything done by 1.6 s; nothing visible before it starts |
+| Columns move in opposite directions | measured: one −62 px, the other +51 px in 1.5 s |
+| Loop has no gap | 61 points of each loop × 2 columns at 1440×900, 768×1024, 1024×1366, 1366×640, 1920×1200: **0 gaps**. Sanity: the old 2-copy setup recreated: **40 of 120 samples had a gap**, so the test can fail |
+| Form behaviour | empty submit: blocked by the browser (no message); filled submit and the GitHub button: message shown, address unchanged, no email or password in the URL; localStorage 0, sessionStorage 0, cookies 0 |
+| Layout | 1440×900, 1366×640, 768×1024, 390×844, 360×640: fits one screen, no sideways scroll, panel hidden below 768 px; no console errors |
+| Reduced motion | columns still, text and fields visible, home boxes unhidden, Lenis off |
+| Frame times | sign-in with columns moving: 239 frames, worst 16.8 ms, none over 33 ms (also at CPU 6× slower). Home page full scroll: 215 frames (laptop) and 207 (phone at 4×): worst 16.8 ms, none over 33 ms |
+| Bug found by eye and fixed | fades poked out of the panel's rounded corners (zoomed screenshot); fixed by rounding the fades |
+| Outside requests / risky patterns | none in the built sign-in page; none in the new files |
+| JS sent | unchanged at 143.9 KB gzipped in total; the sign-in page loads no React. CSS 6.9 → 7.5 KB |
+| POST without JavaScript | the local preview server answers 200 (it serves the page for any method). **Not checked on Cloudflare.** Either way nothing is in the URL and nothing is stored |
+
+### 2026-10-29: counter, header, sign-in views, pause change
+| Check | Result |
+|---|---|
+| `npm run check` / `npm run build` / `npm audit` | 0 errors, 0 warnings, 0 hints / 3 pages built / 0 vulnerabilities |
+| Counter server, on a separate port with a throwaway file | GET returns the total; POST adds 1; a second POST within 2 s is not counted; POST with a foreign `Origin` or `Sec-Fetch-Site: cross-site` returns 403; DELETE and PUT return 405; restart keeps the number; a damaged or negative data file stops the server (it never resets to 0) |
+| Path tricks | `/..%2fpackage.json` returns 404 with the guard, and **200 with the guard deleted** (so the test can fail); dot-dot, encoded dot-dot, null byte, bad encoding all return 404 and the server stays up; the server listens on 127.0.0.1 only |
+| Page counts once per load | after one page load: 1 API call, total +1; a page left open 69 s made 2 calls (1 count + 1 refresh) |
+| Live refresh | open page showed 998, three outside visits were added, after the 60 s refresh it showed 1,001 and gained a digit column, no console errors |
+| Rolling digits | last digits roll up to the real number in about 1.1 s after a fade-in; they land on the exact digits |
+| Counter without a server (plain preview, 404) | no pill shown, no crash; the only console line is the browser's own note about the 404 |
+| Reduced motion | the pulsing dot stops; digits land on the right numbers; nothing hidden |
+| X logo | link goes to https://x.com/Adicrux with `rel="noopener noreferrer"`; hover grows it and shows a glow (screenshot); label hidden below 640 px |
+| Header fit | no sideways scroll at 1440, 1366, 390, 360 and 320 px wide; header height 76 px at all sizes |
+| Box pause at 30% | box 1 stays pinned for 270 px of scrolling (laptop) and 253 px (phone) before box 2 appears; entrance starts as the next box's top edge rises; replay `0000` → `1111` → `0000` → `1100` |
+| Sign-in views | switch correctly; heading stays in place; real Enter key submits in the reset view; create account: `new-password`, 8-character minimum (with real typing "abc" is blocked, 10 characters passes); password cleared on switching; no address change |
+| Sign-in message | first version landed below the visible area on short windows (648 px bottom on a 640 px screen). Now pinned to the bottom, inside the screen at 1440×900, 1366×640, 360×640 and 320×568; disappears by itself after 7 s |
+| A test that was wrong | setting a password by script skipped the minimum-length rule (browsers only check typed text). Redone with real typing |
+| Frame times | home page, whole-page scroll: laptop 181 frames, phone at CPU 4× and 6×: 175 frames each; worst 16.8 ms, none over 33 ms. Idle while the counter rolls in (CPU 4×): 239 frames, worst 16.8 ms. Sign-in with columns moving (CPU 6×): 240 frames, worst 16.8 ms. Sanity: with a deliberate stall, 90 slow frames were reported |
+| Bundle | JavaScript 143.9 → 155.5 KB gzipped (+11.6 KB); CSS 8.4 KB; home HTML 7.7 KB; with `domMax` it would have been 169.1 KB |
+| Risky patterns / outside addresses | none in the new files; built pages contain only the plain links (X, Skiper UI, Open Peeps) |
+
+### 2026-10-29: unique-visitor cookie ("people visited")
+| Check | Result |
+|---|---|
+| `npm run check` / `npm run build` | 0 errors, 0 warnings, 0 hints / 3 pages built |
+| New browser (no cookie) | counted (+1) and given `visited=1; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax` |
+| Same browser again | not counted, no new cookie |
+| Lookalike cookies (`notvisited=1`, `visited=2`, `visited=1x`, `xvisited=1`, empty) | all treated as new browsers: counted, given a real cookie |
+| Several cookies, one of them `visited=1` | recognised, not counted |
+| GET | never counts, never sets a cookie |
+| Other website (`Origin: evil`, `Sec-Fetch-Site: cross-site`) | 403, no cookie |
+| Two cookie-less requests within 2 s | only the first counts; the second gets no cookie (so it counts next time) |
+| Over https (`X-Forwarded-Proto: https`) | cookie gains `Secure` |
+| Real Chrome | one cookie, value 1, HttpOnly, SameSite Lax, about a year; `document.cookie` empty (page scripts can't see it); one API call per load; plain reload adds nothing; clearing cookies then loading counts once more |
+| Header fit with the longer label "people visited" | no sideways scroll and no overlap at 1440, 768, 390, 360 and 320 px wide |
+| Old count | 11 page loads kept in `.data/visits.loads-before-cookies.json`; new count started at 0 |
+
+### 2026-10-29: scenes, copy, capitals, sentence size
+| Check | Result |
+|---|---|
+| `npm run check` / `npm run build` / `npm audit` | 0 errors, 0 warnings, 0 hints / 3 pages built / 0 vulnerabilities |
+| Owner's recording reviewed | 25 s, 2940×1912 at 60 fps; 16 frames viewed. Findings: "1 people visited" (wrong for 1), the scroll sentence far too big, empty picture boxes, placeholder text. All addressed |
+| Home boxes at 1440×900 | all four scenes render and animate; the scan highlight, toggle, share card and tiles seen mid-animation |
+| Heading wrap | "pick" sat alone on a line; fixed with balanced wrapping |
+| Sign-in panel at 1440×900 and 768×1024 | 8 feature cards with titles and lines; scenes mid-animation; label "What's being built" |
+| Score meters | measured: fill, hold about 5 s, fade, repeat (a screenshot caught the reset moment, which looked like a bug but was not) |
+| Gaps in the loop | 3 copies: 0 gaps in 120 samples at each of 1440×900, 768×1024, 1024×1366, 1366×640, 1920×1200, 820×1180, 1180×820. Sanity: 2 copies on a 1024×1366 window: 35 of 120 samples had a gap, so the test can fail |
+| Animations running | sign-in: 122 with 4 copies, 92 with 3. Home boxes: paused before the box is visible, running when it is |
+| Reduced motion | 0 animations on both pages; 0 scene parts hidden |
+| Frame times (worst) | sign-in: 16.8 ms at CPU 1×, 4×, 6× and at 1920×1200; home page whole-page scroll: laptop at 1× and 6×: 16.8 ms, none over 33 ms; phone at 4×: first run had 2 frames of about 133 ms, then 5 reruns (4× and 6×, with and without scenes) had none: treated as a one-off, not reproducible |
+| Phones (390×844, 360×640, 320×568) | no sideways scroll; scene fits its box (letterboxed on the short ones) |
+| Capitals and size | computed style: the four scroll sentences are 48 px, text-transform none; "People visited" first; "Or with email"; hero pill capitalised |
+| Risky patterns, outside addresses, unused CSS | none; only the plain links (X, Skiper UI, Open Peeps); one dead class found and removed |
+| Bundle | JavaScript unchanged at 155.4 KB; CSS 8.4 → 10.3 KB; sign-in HTML 6.3 KB gzipped, home 8.3 KB |
+
+**Not tested:** real phones and low-powered graphics chips, Safari, Firefox (container-query units and `translate` need recent versions), Lighthouse, axe. A real video of the demo.
+
+**Not tested (earlier entry):** whether the cookie needs consent (that is a legal question, COOKIE GATE), and the hosted version.
+
+**Not tested (earlier entry):** the hosted counter (there is none yet), Cloudflare's behaviour, real phones, Safari and Firefox, Lighthouse, axe, a real secret scan (gitleaks not approved).
+
+**Not done yet:**
+- Automated tests (there's no logic worth unit-testing on this page yet).
+- Lighthouse / Core Web Vitals numbers.
+- An axe accessibility scan.
+- Real devices and Safari/Firefox.
+- A secret scan (gitleaks not approved yet).
+- Security headers (`_headers` file).
+
+## Automation
+All of the above runs in GitHub Actions on every push (set up in M1).
+
+## 2026-10-29: lag fix, new categories, dead-code sweep
+| Check | Result |
+|---|---|
+| `npm run check` (+ `tsc --noUnusedLocals --noUnusedParameters`) | 0 errors, 0 warnings, 0 hints; nothing unused |
+| `npm run build` / `npm audit` | 3 pages / 0 vulnerabilities |
+| JS / CSS (gzip) | 155.4 → 150.4 KB / 10.1 KB |
+| Scroll delay after one wheel tick (Chrome, 2x pixels) | Lenis: 580 ms of gliding, only 50 of 100 px delivered. Now: 0 ms, full distance |
+| Animations running at the last box | 20 → 7 |
+| `data-covered` going down and back up (boxes at 3299, 4469, 5639, 6809) | `0000, 1000, 1100, 1110` down; `1110, 1100, 1000, 0000` up |
+| Reduced motion | 0 animations, 0 hidden scene parts |
+| Phones 390 / 320 | no sideways scroll |
+| Sign-in | 92 animations running (unchanged), no errors |
+| New scenes | looked at in screenshots (terminal, task board, chat); a card landing 5% low was found and fixed |
+| **Frame times** | **Not measurable today**: this test Chrome is capped at 30 fps even on a blank page, so every frame reads 33 ms. I can not claim a 60 fps number. Real laptop/phone feel must be checked by the owner. |
+| Bug in my own test | the scroll-to-box helper cannot target "sticky" boxes (they report top 0); used fixed scroll positions instead |
+
+## 2026-10-29: sign-in panel and counter
+| Check | Result |
+|---|---|
+| Sign-in panel, 15 s of samples every 100 ms | both columns move every sample (4.9 to 5.7 px and 4.0 to 4.7 px per 100 ms), 0 stalls |
+| Hover over the panel | both tracks still "running", 0 paused animations |
+| Counter, throwaway server on port 4399 | robot UA: 0; curl: 0; one browser: 1; same browser again: 1; second browser: 2; cross-site POST: 403 |
+| Real server after reset | `GET /api/visits` gives 1; a headless Chrome load of the home page left it at 1 |
+| `npm run check` / build | 0 errors, 0 warnings, 0 hints / 3 pages |
+| Not tested | seeing the panel on the owner's real screen; Low Power Mode behaviour; two real devices |

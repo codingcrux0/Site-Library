@@ -1,0 +1,797 @@
+/*
+ * Styles and motion for the animated mini screens (components/scenes/scene.tsx).
+ *
+ * Sizing: everything is measured in "cqw" = 1% of the width of the picture box. So a scene looks the same in a
+ * small card or a big box, and nothing needs JavaScript to resize. The stage inside is always a 4:3 rectangle that
+ * fits the box (it is letterboxed if the box is wider, which happens on short phones).
+ *
+ * Motion: only transform and opacity (the graphics chip does the work, no layout), except the tiny "typing" bar.
+ * - "Reduce motion": the animations are not applied at all, so every scene rests in its finished state.
+ * - Home page boxes: the animations start when the box scrolls into view (data-in, set by reveal-on-scroll.ts)
+ *   and pause again once the next box covers it (data-covered).
+ * - Sign-in panel: they run continuously and never pause.
+ * - "--i" (set in scene.tsx) = this item's place in the sequence; "--step" = the gap between items.
+ */
+@layer components {
+  .sc {
+    --sc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    container-type: size;
+    overflow: hidden;
+    color: var(--ink-primary);
+  }
+  .sc-stage {
+    container-type: inline-size;
+    display: grid;
+    place-items: center;
+    width: min(100cqw, 133.333cqh);
+    aspect-ratio: 4 / 3;
+  }
+
+  /* ---------- building blocks ---------- */
+  .sc-card {
+    display: flex;
+    flex-direction: column;
+    gap: 3cqw;
+    width: 72cqw;
+    padding: 4.5cqw;
+    background: #fff;
+    border: 1px solid rgba(11, 13, 16, 0.08);
+    border-radius: 4cqw;
+    box-shadow: 0 2.5cqw 6cqw -3cqw rgba(11, 13, 16, 0.2);
+  }
+  .sc-roomy {
+    gap: 4.5cqw;
+    padding: 5.5cqw;
+  }
+  [data-scene="pick"] .sc-card {
+    gap: 2.2cqw;
+  }
+  .sc-row {
+    display: flex;
+    align-items: center;
+    gap: 3cqw;
+  }
+  .sc-bar {
+    display: block;
+    flex: none;
+    width: var(--w, 100%);
+    height: 2.4cqw;
+    border-radius: 1.2cqw;
+    background: rgba(11, 13, 16, 0.1);
+  }
+  .sc-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.6cqw;
+    font-size: max(8px, 3.3cqw);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .sc-note {
+    font-size: max(8px, 2.9cqw);
+    color: var(--ink-muted);
+  }
+  .sc-chip {
+    align-self: flex-start;
+    display: inline-flex;
+    padding: 1.2cqw 3cqw;
+    border: 1px solid rgba(11, 13, 16, 0.14);
+    border-radius: 999px;
+    background: var(--tint-sage);
+    font-size: max(8px, 3cqw);
+    font-weight: 600;
+  }
+  .sc-logo {
+    flex: none;
+    width: 7cqw;
+    height: 7cqw;
+    border: 1px solid rgba(11, 13, 16, 0.08);
+    border-radius: 2cqw;
+    background: var(--tint-sky);
+  }
+  .sc-logo--sm {
+    width: 5.4cqw;
+    height: 5.4cqw;
+    border-radius: 1.6cqw;
+  }
+  .sc-tick svg,
+  .sc-ok svg {
+    width: 3.2cqw;
+    height: 3.2cqw;
+  }
+
+  /* ---------- tested ---------- */
+  .sc-ring {
+    flex: none;
+    width: 6cqw;
+    height: 6cqw;
+    border: 0.45cqw solid rgba(11, 13, 16, 0.18);
+    border-radius: 50%;
+  }
+  .sc-tick {
+    display: grid;
+    place-items: center;
+    width: 6cqw;
+    height: 6cqw;
+    margin: -0.45cqw;
+    border-radius: 50%;
+    background: var(--ink-primary);
+    color: #fff;
+  }
+
+  /* ---------- catch ---------- */
+  .sc-catch {
+    display: flex;
+    flex-direction: column;
+    gap: 2cqw;
+    padding: 3cqw;
+    border: 1px solid rgba(120, 88, 20, 0.28);
+    border-radius: 2.6cqw;
+    background: var(--tint-sand);
+  }
+  .sc-bang {
+    display: grid;
+    place-items: center;
+    width: 4.2cqw;
+    height: 4.2cqw;
+    border-radius: 50%;
+    background: var(--ink-primary);
+    color: #fff;
+    font-size: max(7px, 2.6cqw);
+  }
+
+  /* ---------- scores ---------- */
+  .sc-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 2cqw;
+  }
+  .sc-track {
+    display: block;
+    height: 3.2cqw;
+    overflow: hidden;
+    border-radius: 2cqw;
+    background: rgba(11, 13, 16, 0.08);
+  }
+  .sc-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 2cqw;
+    background: var(--ink-primary);
+    transform: scaleX(var(--to, 1));
+    transform-origin: left;
+  }
+  .sc-fill--soft {
+    background: #8c95a6;
+  }
+
+  /* ---------- compare ---------- */
+  .sc-pair {
+    position: relative;
+    display: flex;
+    gap: 3cqw;
+    width: 80cqw;
+  }
+  .sc-col {
+    flex: 1;
+    width: auto;
+    gap: 2.5cqw;
+    padding: 3.5cqw;
+    border-radius: 3.2cqw;
+  }
+  .sc-cell {
+    display: flex;
+    align-items: center;
+    gap: 1.8cqw;
+    height: 5.5cqw;
+  }
+  .sc-dot {
+    flex: none;
+    width: 2.6cqw;
+    height: 2.6cqw;
+    border-radius: 50%;
+    background: rgba(11, 13, 16, 0.2);
+  }
+  .sc-vs {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    display: grid;
+    place-items: center;
+    width: 8cqw;
+    height: 8cqw;
+    border-radius: 50%;
+    background: var(--ink-primary);
+    color: #fff;
+    font-size: max(8px, 2.8cqw);
+    font-weight: 700;
+  }
+  /* The highlight that scans row by row. top = card padding + header bar + gap. */
+  .sc-scan {
+    position: absolute;
+    top: 8.2cqw;
+    right: 1.5cqw;
+    left: 1.5cqw;
+    height: 6.5cqw;
+    border: 1px solid rgba(94, 129, 244, 0.35);
+    border-radius: 1.6cqw;
+    background: rgba(94, 129, 244, 0.14);
+    pointer-events: none;
+  }
+
+  /* ---------- pick ---------- */
+  .sc-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 6.4cqw;
+    padding: 0 1.6cqw 0 3.6cqw;
+    border: 1px solid rgba(11, 13, 16, 0.14);
+    border-radius: 999px;
+    font-size: max(8px, 3.1cqw);
+    font-weight: 500;
+  }
+  .sc-ok {
+    display: grid;
+    place-items: center;
+    width: 4cqw;
+    height: 4cqw;
+    border-radius: 50%;
+    background: var(--ink-primary);
+    color: #fff;
+  }
+  .sc-result {
+    display: flex;
+    align-items: center;
+    gap: 2.6cqw;
+    padding: 1.2cqw 2.4cqw;
+    border-radius: 2.4cqw;
+    background: var(--tint-sky);
+  }
+  .sc-num {
+    display: grid;
+    place-items: center;
+    width: 4.4cqw;
+    height: 4.4cqw;
+    border-radius: 50%;
+    background: #fff;
+    font-size: max(7px, 2.6cqw);
+  }
+
+  /* ---------- search ---------- */
+  .sc-field {
+    display: flex;
+    align-items: center;
+    gap: 2.4cqw;
+    height: 8cqw;
+    padding: 0 2.4cqw 0 3cqw;
+    border: 1px solid rgba(11, 13, 16, 0.16);
+    border-radius: 999px;
+  }
+  .sc-field svg {
+    flex: none;
+    width: 3.6cqw;
+    height: 3.6cqw;
+    color: var(--ink-muted);
+  }
+  .sc-typed {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    height: 4cqw;
+  }
+  .sc-type {
+    position: relative;
+    width: 62%;
+    height: 2.4cqw;
+    border-radius: 1.2cqw;
+    background: rgba(11, 13, 16, 0.55);
+  }
+  /* The blinking cursor sits at the end of the typed bar and moves with it. */
+  .sc-type::after {
+    content: "";
+    position: absolute;
+    top: -0.8cqw;
+    right: -1.4cqw;
+    width: 0.5cqw;
+    height: 4cqw;
+    background: var(--ink-primary);
+  }
+  .sc-kbd {
+    padding: 0.8cqw 1.8cqw;
+    border: 1px solid rgba(11, 13, 16, 0.1);
+    border-radius: 1.4cqw;
+    background: var(--tint-lilac);
+    font: inherit;
+    font-size: max(7px, 2.5cqw);
+    font-weight: 600;
+  }
+  .sc-hit {
+    display: flex;
+    align-items: center;
+    gap: 2.6cqw;
+    padding: 2cqw 2.6cqw;
+    border-radius: 2.4cqw;
+  }
+  .sc-hit--first {
+    background: var(--tint-sky);
+  }
+
+  /* ---------- lists ---------- */
+  .sc-heart {
+    flex: none;
+    width: 4.6cqw;
+    height: 4.6cqw;
+    margin-left: auto;
+    color: var(--ink-primary);
+    fill: var(--ink-primary);
+  }
+
+  /* ---------- stack ---------- */
+  .sc-chips {
+    display: flex;
+    gap: 2.2cqw;
+  }
+  .sc-chip-dot {
+    width: 9cqw;
+    height: 9cqw;
+    border: 1px solid rgba(11, 13, 16, 0.12);
+    border-radius: 50%;
+    background: var(--tint);
+  }
+  .sc-share {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 1.8cqw;
+    padding: 2cqw 4cqw;
+    border-radius: 999px;
+    background: var(--ink-primary);
+    color: #fff;
+    font-size: max(8px, 3cqw);
+    font-weight: 600;
+  }
+  .sc-share svg {
+    width: 3.2cqw;
+    height: 3.2cqw;
+  }
+
+  /* ---------- components (a small web page) ---------- */
+  .sc-window {
+    width: 76cqw;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  .sc-dots {
+    display: flex;
+    gap: 1.5cqw;
+    padding: 2.4cqw 3cqw;
+    border-bottom: 1px solid rgba(11, 13, 16, 0.07);
+  }
+  .sc-dots i {
+    width: 1.8cqw;
+    height: 1.8cqw;
+    border-radius: 50%;
+    background: rgba(11, 13, 16, 0.16);
+  }
+  .sc-nav {
+    justify-content: space-between;
+    padding: 3cqw 3.5cqw;
+  }
+  .sc-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 2.2cqw;
+    padding: 2cqw 3.5cqw 3cqw;
+  }
+  .sc-btn {
+    width: 18cqw;
+    height: 5.6cqw;
+    margin-top: 1cqw;
+    border-radius: 999px;
+    background: var(--ink-primary);
+  }
+  .sc-minis {
+    display: flex;
+    gap: 2.4cqw;
+    padding: 0 3.5cqw 3.5cqw;
+  }
+  .sc-mini {
+    flex: 1;
+    height: 10cqw;
+    border: 1px solid rgba(11, 13, 16, 0.07);
+    border-radius: 2cqw;
+    background: var(--tint-sky);
+  }
+  .sc-mini:nth-child(2) {
+    background: var(--tint-sand);
+  }
+  .sc-mini:nth-child(3) {
+    background: var(--tint-sage);
+  }
+  .sc-toggle {
+    position: relative;
+    width: 9cqw;
+    height: 5cqw;
+    border-radius: 999px;
+    background: rgba(11, 13, 16, 0.16);
+  }
+  .sc-toggle::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--ink-primary);
+    opacity: 1;
+  }
+  .sc-knob {
+    position: absolute;
+    top: 0.6cqw;
+    left: 0.6cqw;
+    z-index: 1;
+    width: 3.8cqw;
+    height: 3.8cqw;
+    border-radius: 50%;
+    background: #fff;
+    transform: translateX(4cqw);
+  }
+
+  /* ---------- devtools (a terminal) ---------- */
+  .sc-term {
+    width: 76cqw;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-color: transparent;
+    background: var(--ink-primary);
+    color: #fff;
+  }
+  .sc-term .sc-dots {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+  .sc-term .sc-dots i {
+    background: rgba(255, 255, 255, 0.28);
+  }
+  .sc-term .sc-bar {
+    background: rgba(255, 255, 255, 0.35);
+  }
+  .sc-lines {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 3cqw;
+  }
+  .sc-term .sc-lines {
+    padding: 4cqw 4cqw 6cqw;
+  }
+  .sc-prompt {
+    width: 3cqw;
+    font-size: max(8px, 3.2cqw);
+    color: var(--tint-sage);
+  }
+  .sc-term .sc-ok {
+    background: var(--tint-sage);
+    color: var(--ink-primary);
+  }
+  .sc-cursor {
+    width: 1.2cqw;
+    height: 3.6cqw;
+    background: #fff;
+  }
+
+  /* ---------- productivity (a task board) ---------- */
+  .sc-board {
+    position: relative;
+    display: flex;
+    gap: 3cqw;
+    width: 80cqw;
+  }
+  .sc-lane {
+    flex: 1;
+    width: auto;
+    gap: 2.5cqw;
+    min-height: 40cqw;
+    padding: 3cqw;
+    border-radius: 3.2cqw;
+  }
+  .sc-slot {
+    display: block;
+    height: 9cqw;
+    border: 1px solid rgba(11, 13, 16, 0.07);
+    border-radius: 2cqw;
+    background: var(--tint-sand);
+  }
+  .sc-slot--done {
+    background: var(--tint-sage);
+  }
+  /* Sits exactly on top of the first "To do" slot, then travels two lanes to the right. */
+  .sc-mover {
+    position: absolute;
+    top: 9.5cqw;
+    left: 3cqw;
+    width: 18.7cqw;
+    height: 9cqw;
+    border: 1px solid rgba(11, 13, 16, 0.1);
+    border-radius: 2cqw;
+    background: var(--ink-primary);
+  }
+
+  /* ---------- ai (a chat) ---------- */
+  .sc-bubble {
+    display: flex;
+    gap: 2.4cqw;
+    padding: 3cqw;
+    border-radius: 3cqw;
+  }
+  .sc-bubble--me {
+    align-self: flex-end;
+    width: 56cqw;
+    background: var(--tint-sky);
+  }
+  .sc-bubble--ai {
+    align-items: flex-start;
+    background: var(--tint-lilac);
+  }
+  .sc-bubble svg {
+    flex: none;
+    width: 4cqw;
+    height: 4cqw;
+  }
+  .sc-bubble .sc-lines {
+    gap: 2cqw;
+  }
+  .sc-thinking {
+    display: flex;
+    gap: 1.6cqw;
+    padding-left: 3cqw;
+  }
+  .sc-think {
+    width: 2.2cqw;
+    height: 2.2cqw;
+    border-radius: 50%;
+    background: rgba(11, 13, 16, 0.4);
+  }
+
+  /* ---------- when the animations run ---------- */
+  /* Home page: wait until the box is on screen, and stop again once the next box covers it. */
+  [data-reveal] .sc {
+    --sc-state: paused;
+  }
+  [data-in] .sc {
+    --sc-state: running;
+  }
+  [data-covered] .sc {
+    --sc-state: paused;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sc-pop {
+      animation: sc-pop 8s var(--sc-ease) infinite var(--sc-state, running);
+    }
+    .sc-rise {
+      animation: sc-rise 8s var(--sc-ease) infinite var(--sc-state, running);
+    }
+    .sc-grow {
+      animation: sc-grow 8s var(--sc-ease) infinite var(--sc-state, running);
+    }
+    .sc-pulse {
+      animation: sc-pulse 2.2s ease-in-out infinite var(--sc-state, running);
+    }
+    .sc-float {
+      animation: sc-float 6s ease-in-out infinite var(--sc-state, running);
+    }
+    .sc-scan {
+      animation: sc-scan 8s var(--sc-ease) infinite var(--sc-state, running);
+    }
+    .sc-type {
+      animation: sc-typing 8s linear infinite var(--sc-state, running);
+    }
+    .sc-type::after {
+      animation: sc-blink 1s steps(1) infinite var(--sc-state, running);
+    }
+    .sc-move {
+      animation: sc-move 8s var(--sc-ease) infinite var(--sc-state, running);
+    }
+    .sc-cursor {
+      animation: sc-blink 1s steps(1) infinite var(--sc-state, running);
+    }
+    .sc-knob {
+      animation: sc-knob 5s var(--sc-ease) infinite var(--sc-state, running);
+    }
+    .sc-toggle::before {
+      animation: sc-on 5s var(--sc-ease) infinite var(--sc-state, running);
+    }
+
+    /* Must come AFTER the rules above: the "animation" shorthand resets delay and fill-mode.
+       Items in a sequence start one after another; "backwards" keeps them hidden while they wait. */
+    .sc-pop,
+    .sc-rise,
+    .sc-grow {
+      animation-delay: calc(var(--i, 0) * var(--step, 0.5s));
+      animation-fill-mode: backwards;
+    }
+
+    @keyframes sc-pop {
+      0%,
+      5% {
+        opacity: 0;
+        transform: scale(0.4);
+      }
+      13% {
+        opacity: 1;
+        transform: scale(1.14);
+      }
+      18%,
+      86% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      94%,
+      100% {
+        opacity: 0;
+        transform: scale(0.85);
+      }
+    }
+    @keyframes sc-rise {
+      0%,
+      5% {
+        opacity: 0;
+        transform: translateY(5cqw);
+      }
+      16%,
+      86% {
+        opacity: 1;
+        transform: none;
+      }
+      94%,
+      100% {
+        opacity: 0;
+        transform: translateY(-1.5cqw);
+      }
+    }
+    @keyframes sc-grow {
+      0%,
+      5% {
+        opacity: 1;
+        transform: scaleX(0);
+      }
+      40%,
+      86% {
+        opacity: 1;
+        transform: scaleX(var(--to, 1));
+      }
+      94%,
+      100% {
+        opacity: 0;
+        transform: scaleX(var(--to, 1));
+      }
+    }
+    @keyframes sc-pulse {
+      0%,
+      100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.07);
+      }
+    }
+    @keyframes sc-float {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-1.6cqw);
+      }
+    }
+    /* The highlight rests on each row in turn: four rows, 8cqw apart. */
+    @keyframes sc-scan {
+      0%,
+      8% {
+        opacity: 0;
+        transform: translateY(0);
+      }
+      12%,
+      26% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      32%,
+      46% {
+        transform: translateY(8cqw);
+      }
+      52%,
+      66% {
+        transform: translateY(16cqw);
+      }
+      72%,
+      86% {
+        transform: translateY(24cqw);
+      }
+      94%,
+      100% {
+        opacity: 0;
+        transform: translateY(24cqw);
+      }
+    }
+    /* "Typing" in 10 jumps, like keystrokes. This is the one animation that changes width. */
+    @keyframes sc-typing {
+      0% {
+        width: 0;
+        opacity: 1;
+      }
+      6% {
+        width: 0;
+        animation-timing-function: steps(10, end);
+      }
+      34%,
+      88% {
+        width: 62%;
+        opacity: 1;
+      }
+      96%,
+      100% {
+        width: 62%;
+        opacity: 0;
+      }
+    }
+    @keyframes sc-blink {
+      50% {
+        opacity: 0;
+      }
+    }
+    /* Rests in "To do", slides across to "Done", then fades and starts again. */
+    @keyframes sc-move {
+      0%,
+      12% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      42%,
+      86% {
+        opacity: 1;
+        transform: translateX(55.3cqw);
+      }
+      94%,
+      100% {
+        opacity: 0;
+        transform: translateX(55.3cqw);
+      }
+    }
+    @keyframes sc-knob {
+      0%,
+      35% {
+        transform: translateX(0);
+      }
+      45%,
+      85% {
+        transform: translateX(4cqw);
+      }
+      95%,
+      100% {
+        transform: translateX(0);
+      }
+    }
+    @keyframes sc-on {
+      0%,
+      35% {
+        opacity: 0;
+      }
+      45%,
+      85% {
+        opacity: 1;
+      }
+      95%,
+      100% {
+        opacity: 0;
+      }
+    }
+  }
+}

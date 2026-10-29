@@ -1,0 +1,185 @@
+/*
+ * Styles for components/ui/hero.tsx and the .rr-btn button classes.
+ * The hero component ships class names only (rr-hero__*), so its look lives here,
+ * built from the design tokens in global.css.
+ * Wrapped in @layer components so Tailwind utility classes can still override it.
+ */
+@layer components {
+  /* ---------- Hero layout ---------- */
+  .rr-hero {
+    position: relative;
+    display: grid;
+    gap: var(--space-12);
+    align-items: center;
+    padding-block: var(--space-12) var(--space-16);
+  }
+  @media (min-width: 900px) {
+    .rr-hero {
+      padding-block: var(--space-20) var(--space-20);
+    }
+    .rr-hero--media {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    }
+  }
+
+  .rr-hero__body {
+    max-width: 46rem;
+  }
+  .rr-hero__mark {
+    margin-bottom: var(--space-6);
+  }
+  .rr-hero__lede {
+    margin: var(--space-6) 0 0;
+    max-width: 36rem;
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: var(--ink-secondary);
+  }
+  .rr-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4) var(--space-8);
+    margin-top: var(--space-10);
+  }
+
+  /* The second path: a quiet text link with an arrow, never a second button. */
+  .rr-hero__second {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px; /* comfortable tap target */
+    border-radius: var(--radius-xs);
+    font-weight: 500;
+    color: var(--ink-primary);
+    text-decoration: none;
+  }
+  .rr-hero__second:hover > span:first-child {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .rr-hero__secondIcon {
+    display: inline-flex;
+    transition: transform var(--duration-fast) var(--easing-standard);
+  }
+  .rr-hero__second:hover .rr-hero__secondIcon {
+    transform: translateX(3px);
+  }
+  .rr-hero__second:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 4px;
+  }
+
+  .rr-hero__foot {
+    margin: var(--space-6) 0 0;
+    font-size: 0.875rem;
+    color: var(--ink-muted);
+  }
+
+  .rr-hero__media {
+    min-width: 0;
+  }
+
+  /* ---------- Background film variant (not used on the landing page yet) ---------- */
+  .rr-hero--film {
+    overflow: hidden;
+    isolation: isolate;
+    min-height: min(80vh, 720px);
+  }
+  .rr-hero__film {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+  .rr-hero__film video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .rr-hero__filmbar {
+    position: absolute;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+  }
+  .rr-hero__filmtoggle {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    background: var(--surface-raised);
+    color: var(--ink-primary);
+    cursor: pointer;
+  }
+  .rr-hero__filmtoggle::before {
+    content: "";
+    position: absolute;
+    inset: -8px; /* 28px + 8px each side = 44px hit area */
+  }
+  .rr-hero__filmtoggle:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Buttons ---------- */
+  .rr-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: var(--control-height-md);
+    padding-inline: var(--space-5);
+    border: 0;
+    border-radius: var(--control-radius);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--easing-standard),
+      transform var(--duration-fast) var(--easing-standard);
+  }
+  .rr-btn--primary {
+    background: var(--action-primary);
+    color: var(--action-primary-ink);
+  }
+  .rr-btn--primary:hover {
+    background: var(--action-primary-hover);
+  }
+  .rr-btn--lg {
+    height: var(--control-height-lg);
+    padding-inline: var(--space-6);
+    font-size: 1rem;
+  }
+  .rr-btn--pill {
+    border-radius: var(--radius-full);
+  }
+  .rr-btn:active {
+    transform: scale(0.98);
+  }
+  .rr-btn:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* No sliding or squashing for people who asked for less motion. */
+  @media (prefers-reduced-motion: reduce) {
+    .rr-btn,
+    .rr-hero__secondIcon {
+      transition: none;
+    }
+    .rr-btn:active,
+    .rr-hero__second:hover .rr-hero__secondIcon {
+      transform: none;
+    }
+  }
+}

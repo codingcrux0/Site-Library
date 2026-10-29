@@ -1,0 +1,30 @@
+---
+// The shared page shell: <head> tags and the global stylesheet. Every page wraps itself in this.
+import '@/styles/global.css';
+
+interface Props {
+	title: string;
+	description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta name="theme-color" content="#ffffff" />
+		<!-- Basic social preview text. Preview images come in milestone M7. -->
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+	</head>
+	<body class="min-h-dvh bg-surface-base font-sans text-ink-primary">
+		<slot />
+	</body>
+</html>

@@ -1,0 +1,40 @@
+# --- Secrets: NEVER commit these ---
+# .env files hold API keys. If one is ever committed, rotate the key immediately
+# (deleting the commit is not enough, the key stays in git history).
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+*.p12
+
+# --- Private research data ---
+# Your real Google Sheet exports can contain private_notes and drafts.
+# Keep them in private/ so they never reach the repo.
+private/
+
+# --- Dependencies and build output (re-creatable, no need to store) ---
+node_modules/
+dist/
+.astro/
+.wrangler/
+coverage/
+playwright-report/
+test-results/
+
+# --- Local page-view counter (scripts/local-server.mjs) ---
+.data/
+
+# --- Supabase local files ---
+supabase/.temp/
+supabase/.branches/
+
+# --- Local assistant / tool folders ---
+.claude/
+.t3/
+
+# --- OS / editor clutter ---
+.DS_Store
+*.log

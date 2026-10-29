@@ -1,0 +1,15 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"],
+  "compilerOptions": {
+    // "@/components/ui/hero" means "src/components/ui/hero". shadcn components expect this shortcut.
+    // (No "baseUrl": TypeScript 6 deprecates it, and paths work without it.)
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    // Tell TypeScript that .tsx files use React's JSX.
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  }
+}
