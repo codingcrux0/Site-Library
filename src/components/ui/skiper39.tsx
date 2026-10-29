@@ -17,12 +17,15 @@ import { useEffect, useRef, useState } from "react";
  * - Removed "use client" (a Next.js-only line; Astro uses client:* directives instead).
  * - Loads faster: the page preloads the picture while this script downloads (it used to wait for the script, then fetch the
  *   picture: one slow step after another), and the picture is decoded off the main thread so the first frame does not hitch.
- * - Lighter on phones: at most PHONE_FIGURES figures at once on narrow screens. Phones draw them 60 times a second on a weak
- *   graphics chip, and most figures were hidden behind others anyway.
+ * - Lighter on phones: narrow screens (under 640px) get a second, smaller picture holding only 45 of the 101 figures (the figures are
+ *   copied pixel for pixel: 180 KB instead of 380 KB, and about half the memory). Phones draw the crowd 60 times a second on a
+ *   weak graphics chip, and most figures were hidden behind others anyway. docs/DECISIONS.md D24 and D26 say how it was made.
  */
 
-// Most figures on screen at once on a narrow screen (under 640px). Wider screens show all of them.
-const PHONE_FIGURES = 45;
+// Narrow screens use the smaller picture. index.astro preloads the matching picture with this same width rule, keep them in step.
+const NARROW_QUERY = "(max-width: 639px)";
+// The phone picture: 45 figures in a grid 9 across and 5 down (made from the full picture, docs/DECISIONS.md D26).
+const PHONE_SHEET = { src: "/images/open-peeps-crowd-phone.png", rows: 9, cols: 5 };
 
 interface CrowdCanvasProps {
   /** A sprite sheet: a grid of figures. `rows` = figures across, `cols` = figures down (names kept from the original). */
@@ -31,6 +34,8 @@ interface CrowdCanvasProps {
   cols?: number;
   /** Grid positions to leave out, counted 0, 1, 2... left to right, then top to bottom. */
   skip?: readonly number[];
+  /** A smaller picture (and its own grid) used instead on narrow screens. Nothing is skipped in it. */
+  narrow?: { src: string; rows: number; cols: number };
   /** Freeze the crowd where it is. */
   paused?: boolean;
   className?: string;
@@ -57,6 +62,7 @@ const CrowdCanvas = ({
   rows = 15,
   cols = 7,
   skip = [],
+  narrow,
   paused = false,
   className,
 }: CrowdCanvasProps) => {
@@ -66,6 +72,7 @@ const CrowdCanvas = ({
   const setPausedRef = useRef<(paused: boolean) => void>(() => {});
   // Compare skip lists by value, so a new array with the same numbers doesn't restart everything.
   const skipKey = skip.join(",");
+  const narrowKey = narrow ? `${narrow.src}|${narrow.rows}|${narrow.cols}` : "";
 
   useEffect(() => {
     pausedRef.current = paused;
@@ -77,7 +84,10 @@ const CrowdCanvas = ({
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
-    const skipped = new Set(skipKey ? skipKey.split(",").map(Number) : []);
+    // Decide once which picture this screen gets (same rule as the preload in index.astro).
+    const useNarrow = !!narrow && window.matchMedia(NARROW_QUERY).matches;
+    const sheet = useNarrow && narrow ? narrow : { src, rows, cols };
+    const skipped = new Set(!useNarrow && skipKey ? skipKey.split(",").map(Number) : []);
     const stage = { width: 0, height: 0, scale: 1, dpr: 1 };
     const allPeeps: Peep[] = [];
     const available: Peep[] = [];
@@ -97,13 +107,13 @@ const CrowdCanvas = ({
 
     // Cut the sprite sheet into one Peep per figure.
     const createPeeps = () => {
-      const cellWidth = img.naturalWidth / rows;
-      const cellHeight = img.naturalHeight / cols;
-      for (let i = 0; i < rows * cols; i++) {
+      const cellWidth = img.naturalWidth / sheet.rows;
+      const cellHeight = img.naturalHeight / sheet.cols;
+      for (let i = 0; i < sheet.rows * sheet.cols; i++) {
         if (skipped.has(i)) continue;
         allPeeps.push({
-          sx: (i % rows) * cellWidth,
-          sy: Math.floor(i / rows) * cellHeight,
+          sx: (i % sheet.rows) * cellWidth,
+          sy: Math.floor(i / sheet.rows) * cellHeight,
           sw: cellWidth,
           sh: cellHeight,
           width: cellWidth,
@@ -209,7 +219,7 @@ const CrowdCanvas = ({
       //    its own height + 150px (standing furthest back) + 10px (walking bounce), all
       //    multiplied by the scale. That must fit inside the canvas, with 8px to spare.
       const widthScale = stage.width < 640 ? 0.6 : 1;
-      const cellHeight = img.naturalHeight / cols;
+      const cellHeight = img.naturalHeight / sheet.cols;
       const heightScale = (stage.height - 8) / (cellHeight + 160);
       stage.scale = Math.max(0.3, Math.min(widthScale, heightScale));
       canvas.width = Math.round(stage.width * stage.dpr);
@@ -224,9 +234,7 @@ const CrowdCanvas = ({
         available.push(peep);
       }
       // Start everyone part-way through their walk, so the street is already busy.
-      // Figures left in `available` step in later, as walkers leave (see onComplete in startWalk).
-      const limit = stage.width < 640 ? PHONE_FIGURES : Infinity;
-      while (available.length && crowd.length < limit) addToCrowd().progress(Math.random());
+      while (available.length) addToCrowd().progress(Math.random());
       render();
     };
 
@@ -272,7 +280,7 @@ const CrowdCanvas = ({
       layout();
       updateRunning();
     };
-    img.src = src;
+    img.src = sheet.src;
     // decode() resolves once the picture is fully downloaded AND unpacked in the background. If it fails, the picture is
     // missing, so the canvas just stays empty (drawing a broken image would throw).
     img.decode().then(start, () => {});
@@ -288,7 +296,7 @@ const CrowdCanvas = ({
       for (const peep of crowd) peep.walk?.kill();
       setPausedRef.current = () => {};
     };
-  }, [src, rows, cols, skipKey]);
+  }, [src, rows, cols, skipKey, narrowKey]);
 
   // Decorative only, so screen readers skip it.
   return <canvas ref={canvasRef} aria-hidden="true" className={className} />;
@@ -331,6 +339,7 @@ const Skiper39 = ({
         rows={15}
         cols={7}
         skip={KNIFE_FIGURES}
+        narrow={PHONE_SHEET}
         paused={paused}
         // The canvas starts just below the caption and its line (124px on phones, 150px on
         // larger screens), so figures can never cover the caption.

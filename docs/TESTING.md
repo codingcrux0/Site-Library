@@ -268,3 +268,19 @@ All of the above runs in GitHub Actions on every push (set up in M1).
 | `npm run check`, `npm test`, `npm audit`, gitleaks | 0 errors, 0 warnings, 0 hints / 10 of 10 / 0 vulnerabilities / no leaks |
 | **Not tested** | the card in real X, WhatsApp, Slack or Discord (they fetch it only from the live site); Safari/Firefox tab icons; the old-preview caching behaviour |
 
+## 2026-10-29: why the crowd is slow to appear, phone picture (D26)
+| Check | Result |
+|---|---|
+| Live site, desktop 1440, no throttle, cache off | crowd first drawn 5345 ms; HTML arrives about 2.2 s; stylesheet 1.6 s for 11 KB; picture about 100 KB/s |
+| `curl` timings from the owner's Mac | site: connect 0.28 to 1.3 s, first byte 1.2 to 4.8 s, served from MRS; cloudflare.com: connect 0.08 s, BOM; Vercel and GitHub Pages sites: connect 0.11 to 0.21 s |
+| Test link (480 ms round trip, 150 KB/s), crowd first drawn, 3 runs each | no picture preload 6347 ms; with preload 4725 to 4747 ms; plus inline stylesheet 4643 to 4666 ms; plus script preloads 4639 to 4674 ms (the last two not kept) |
+| Picture formats | lossless WebP 91%, lossy WebP 120 to 161%, AVIF 76 to 91% (with visible loss), fewer colours 71 to 94%: none kept |
+| Phone picture vs the original figures | 45 figures, 180,521 bytes (47%), 0 pixels differ; file rebuilt by `make-phone-crowd.py` is byte-identical |
+| Phone, test link, crowd first drawn, 2 runs each | before 4746 / 4707 ms; after 3574 / 3576 ms |
+| Pictures downloaded | phone: only the phone picture (180,821 B over the network); desktop: only the full picture (380,868 B) |
+| Looked at | phone and desktop crowd: full and normal; pause stops it (0 pixels change), play restarts it; desktop to phone width to desktop, and phone to desktop width: redrawn, no errors |
+| Crowd graphics work, phone size, over 4 s (3 runs) | GPUTask 148 / 118 / 126 ms, FireAnimationFrame 116 / 98 / 95 ms (originally about 190 / 207) |
+| Fresh copy of GitHub's latest commit: `npm clean-install`, `npm run build`, `wrangler deploy --dry-run` | builds; dry run reads 32 files including `og-image.png` (so the unchanged logo on the live site is a stuck or failed Cloudflare build, not the code) |
+| `npm run check`, `npm test`, `npm audit`, gitleaks | 0 errors, 0 warnings, 0 hints / 10 of 10 / 0 vulnerabilities / no leaks |
+| **Not tested** | a real phone; the live site after this change; why Cloudflare routes workers.dev via Marseille for this location; other places' speeds |
+

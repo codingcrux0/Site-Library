@@ -94,7 +94,7 @@ site-library/
 | `docs/project_spec.md` | The product spec |
 | `docs/ARCHITECTURE.md` | How the pieces fit |
 | `docs/SECURITY.md` | Threat model, permission table, controls |
-| `docs/DECISIONS.md` | What we chose and why (D1 to D25) |
+| `docs/DECISIONS.md` | What we chose and why (D1 to D26) |
 | `docs/TESTING.md` | What has been verified, with real results |
 | `docs/INCIDENT.md` | What to do when something goes wrong |
 | `docs/COMPONENTS.md` | Component inventory and design tokens |

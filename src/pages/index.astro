@@ -31,7 +31,9 @@ const year = new Date().getFullYear();
 
 <Layout title={`${SITE.name}: useful websites, tested by hand`} description={SITE.description}>
 	<!-- Start downloading the crowd picture right away, at low priority (after the page's own files), instead of waiting for the crowd's script to ask for it. -->
-	<link slot="head" rel="preload" as="image" href="/images/open-peeps-crowd.png" fetchpriority="low" />
+	<!-- Two pictures: a smaller one for narrow screens. The width rule must match NARROW_QUERY in skiper39.tsx, or a screen would download both. -->
+	<link slot="head" rel="preload" as="image" href="/images/open-peeps-crowd-phone.png" media="(max-width: 639px)" fetchpriority="low" />
+	<link slot="head" rel="preload" as="image" href="/images/open-peeps-crowd.png" media="(min-width: 640px)" fetchpriority="low" />
 	<SiteHeader>
 		<!-- client:idle = load its JavaScript once the browser has finished the important work, so the hero stays instant. -->
 		<VisitCounter client:idle />
