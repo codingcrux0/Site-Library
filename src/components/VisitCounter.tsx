@@ -2,21 +2,21 @@ import { useEffect, useState } from "react";
 import AnimatedCounter from "@/components/ui/animated-counter";
 
 /*
- * The "People visited" pill in the home page header.
+ * The "Page views" pill in the home page header.
  *
- * What it counts: UNIQUE BROWSERS. Each time the home page loads, the browser asks the server to count it
- * (POST /api/visits). The server counts a browser only the first time: it hands out a cookie ("visited=1", no ID,
- * no personal data) and recognises it afterwards. So a refresh does not count again (DECISIONS.md D15).
- * Strictly it is browsers, not people: a second device, a cleared cookie or a private window counts again.
- * This file never touches the cookie. It is HttpOnly (set and read by the server only).
- * It then re-reads the number once a minute while the tab is visible, so the figure stays "live".
+ * What it counts: PAGE VIEWS. Each time the home page loads, the browser asks the server to count it (POST /api/visits)
+ * and shows the new total. There is no cookie and nothing about the visitor is stored, so a refresh counts again,
+ * which is why the label says "Page views" and never "people" (DECISIONS.md D22).
+ * It then re-reads the number every 5 minutes while the tab is visible, so the figure stays fairly "live".
+ * (Slow on purpose: every read uses part of the free daily allowance of the online counter.)
  *
- * The server side is described in DECISIONS.md D12. If the server can't be reached (for example the plain
- * `npm run dev`, which has no /api/visits), NOTHING is shown. We never show a made-up number.
+ * The server side is worker/index.mjs online and scripts/local-server.mjs on your computer. If the server can't be
+ * reached (for example the plain `npm run dev`, which has no /api/visits), NOTHING is shown.
+ * We never show a made-up number.
  */
 
 const ENDPOINT = "/api/visits";
-const REFRESH_MS = 60_000;
+const REFRESH_MS = 300_000;
 
 // One page load = one count, even if this component is mounted twice in development.
 let counted = false;
@@ -79,7 +79,7 @@ export default function VisitCounter() {
         <span className="absolute inset-0 rounded-full bg-emerald-500 opacity-60 motion-safe:animate-ping" />
         <span className="relative size-2 rounded-full bg-emerald-500" />
       </span>
-      <span>People visited</span>
+      <span>Page views</span>
       <AnimatedCounter value={rolled ? total : rollStart(total)} duration={1} className="font-semibold text-ink-primary" />
     </p>
   );

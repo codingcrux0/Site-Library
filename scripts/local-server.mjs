@@ -3,24 +3,23 @@
 //   1. serves the built site from dist/
 //   2. runs the visitor counter at /api/visits (the home page header reads it)
 //
-// This is for YOUR COMPUTER ONLY. When the site is hosted, Cloudflare serves the files and a small
-// Cloudflare function must answer /api/visits instead (DECISIONS.md D12 describes exactly what it must do).
+// This is for YOUR COMPUTER ONLY. When the site is hosted, Cloudflare serves the files and a small Cloudflare
+// Worker (worker/index.mjs) answers /api/visits instead.
 //
-// The counter's contract:
+// The counter's contract (the online version in worker/index.mjs answers exactly the same way):
 //   GET  /api/visits  ->  { "total": 123 }          just read the number
-//   POST /api/visits  ->  { "total": 124 }          count this browser if it has not been counted before, return the number
+//   POST /api/visits  ->  { "total": 124 }          a page was loaded: count one page view, return the number
 //
-// Counting UNIQUE browsers (owner's decision, DECISIONS.md D15): the first time a browser POSTs, it has no
-// "visited" cookie, so it is counted and given one. The cookie's value is just "1": no ID, no personal data,
-// the same for everyone. It only means "this browser was already counted". Next visits carry it, so are not counted.
-// It counts browsers, not people: two devices count twice, and clearing cookies or a private window counts again.
-// Robots and automated test browsers are skipped (see ROBOT below).
-// The only thing stored on the server is one whole number in .data/visits.json. No IP addresses, no per-visitor data.
+// It counts PAGE VIEWS (DECISIONS.md D22): every home-page load adds one, a refresh counts again.
+// There is NO cookie and nothing about the visitor is stored. The only thing kept is one whole number in .data/visits.json.
+// Who counts and who does not (own pages only, no robots, a brake against floods) is decided by worker/visits-rules.mjs,
+// the same file the online version uses.
 
 import { createReadStream, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import http from "node:http";
 import { dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createBrake, decide } from "../worker/visits-rules.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = join(ROOT, "dist");
@@ -47,41 +46,8 @@ function saveTotal() {
   renameSync(temporary, DATA_FILE);
 }
 
-// Basic abuse brake: the same address can add at most one count every 2 seconds. Kept in memory only,
-// never written to disk, and forgotten after a minute.
-const lastCounted = new Map();
-const MIN_GAP_MS = 2000;
-
-function mayCount(address) {
-  const now = Date.now();
-  for (const [key, time] of lastCounted) if (now - time > 60_000) lastCounted.delete(key);
-  if (now - (lastCounted.get(address) ?? 0) < MIN_GAP_MS) return false;
-  lastCounted.set(address, now);
-  return true;
-}
-
-// Robots and automated test browsers are not people, so they are never counted (and never get the cookie).
-// This is a simple name check, not proof: a robot that pretends to be a normal browser would still be counted.
-const ROBOT = /bot|crawl|spider|slurp|headless|phantom|puppeteer|playwright|selenium|lighthouse|curl|wget|python-requests|node-fetch|undici/i;
-
-function isRobot(request) {
-  return ROBOT.test(request.headers["user-agent"] ?? "");
-}
-
-// Only our own pages may add to the count. Browsers always say where a request came from; if it was another website, refuse.
-function isSameSite(request) {
-  const fetchSite = request.headers["sec-fetch-site"];
-  if (fetchSite && fetchSite !== "same-origin") return false;
-  const origin = request.headers.origin;
-  if (origin) {
-    try {
-      return new URL(origin).host === request.headers.host;
-    } catch {
-      return false;
-    }
-  }
-  return true;
-}
+// A brake for the whole counter: at most 10 counts in any one second (kept in memory only; same numbers as the online version).
+const brake = createBrake(10, 1000);
 
 const COMMON_HEADERS = {
   "x-content-type-options": "nosniff",
@@ -89,39 +55,21 @@ const COMMON_HEADERS = {
   "referrer-policy": "strict-origin-when-cross-origin",
 };
 
-// The "already counted" cookie. Value "1" for everyone. HttpOnly: page scripts cannot read it. SameSite=Lax:
-// it is only sent for our own site. Secure is added when the request came over https (a hosted site must be https).
-const COOKIE_NAME = "visited";
-const COOKIE_DAYS = 365;
-
-function hasCookie(request) {
-  return (request.headers.cookie ?? "").split(";").some((part) => part.trim() === `${COOKIE_NAME}=1`);
-}
-
-function cookieHeader(request) {
-  const secure = request.headers["x-forwarded-proto"] === "https" ? "; Secure" : "";
-  return `${COOKIE_NAME}=1; Max-Age=${COOKIE_DAYS * 86400}; Path=/; HttpOnly; SameSite=Lax${secure}`;
-}
-
 function sendJson(response, status, body, extra = {}) {
   response.writeHead(status, { ...COMMON_HEADERS, "content-type": "application/json", "cache-control": "no-store", ...extra });
   response.end(JSON.stringify(body));
 }
 
 function handleVisits(request, response) {
-  if (request.method === "GET") return sendJson(response, 200, { total });
-  if (request.method === "POST") {
-    request.resume(); // we never read a request body
-    if (!isSameSite(request)) return sendJson(response, 403, { error: "cross-site request refused" });
-    // Already counted before (has the cookie), or not a person: change nothing and set nothing.
-    if (hasCookie(request) || isRobot(request)) return sendJson(response, 200, { total });
-    // New browser: count it and give it the cookie. (If the abuse brake says no, no cookie is given, so a real visitor is counted next time.)
-    if (!mayCount(request.socket.remoteAddress ?? "unknown")) return sendJson(response, 200, { total });
+  request.resume(); // we never read a request body
+  const verdict = decide(request.method, (name) => request.headers[name] ?? null, brake);
+  if (verdict.status === 405) return sendJson(response, 405, { error: "use GET or POST" }, { allow: "GET, POST" });
+  if (verdict.status === 403) return sendJson(response, 403, { error: "cross-site request refused" });
+  if (verdict.count) {
     total += 1;
     saveTotal();
-    return sendJson(response, 200, { total }, { "set-cookie": cookieHeader(request) });
   }
-  return sendJson(response, 405, { error: "use GET or POST" }, { allow: "GET, POST" });
+  return sendJson(response, 200, { total });
 }
 
 // ---------- the static files ----------
@@ -193,6 +141,6 @@ const server = http.createServer((request, response) => {
   return handleStatic(request, response);
 });
 
-server.listen(PORT, HOST, () => console.log(`Local site: http://localhost:${PORT}  (visitors counted so far: ${total})`));
+server.listen(PORT, HOST, () => console.log(`Local site: http://localhost:${PORT}  (page views counted so far: ${total})`));
 
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => server.close(() => process.exit(0)));

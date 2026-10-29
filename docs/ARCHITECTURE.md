@@ -35,10 +35,12 @@ Status: **planned (M0).** Nothing is built yet.
 | Outbound redirect, form handling | Cloudflare Pages Functions | Only what each function needs |
 | Scheduled jobs | GitHub Actions | Service key, stored in GitHub encrypted secrets |
 
-## The page-view counter (built 2026-10-29, local only)
-Browser (home page) -> `POST /api/visits` once per load (counted only if it has no cookie), then `GET` once a minute -> a server that keeps one number.
-- Today the server is `scripts/local-server.mjs` (your computer only). Hosted version: a Cloudflare Pages Function plus one stored number, **not built yet**.
-- The contract, and the rules the server must keep, are in DECISIONS.md D12. It counts unique browsers (not people): the first visit gets a `visited=1` cookie and is counted; later visits are not. See D15.
+## The page-view counter (rebuilt 2026-10-29: no cookie, works online)
+Browser (home page) -> `POST /api/visits` once per page load, then `GET` every 5 minutes while the tab is visible -> a server that keeps one number.
+- Online: `worker/index.mjs`, a Cloudflare Worker that runs ONLY for `/api/*` (`run_worker_first` in `wrangler.jsonc`). Pages and images are plain files and never touch it. The number lives in one Durable Object (SQLite), which handles one request at a time, so counts are never lost.
+- On your computer: `scripts/local-server.mjs`, same answers, number kept in `.data/visits.json`.
+- Both use `worker/visits-rules.mjs` (own pages only, robots skipped, a whole-site brake of 10 counts a second). Tests: `npm test`.
+- Privacy: no cookie and nothing about the visitor is stored. See DECISIONS D22 and SECURITY.md.
 
 ## Planned data tables (from spec section 8; finalised in M1)
 categories, entries, tags, entry_tags, same_task_tests, live_signals, profiles, preferences, lists, list_items, ratings, feedback, used_for_tags, accuracy_votes, submissions, reports, moderation_actions, changelog_entries, admin_audit_log.

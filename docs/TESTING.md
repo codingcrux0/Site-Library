@@ -208,3 +208,19 @@ All of the above runs in GitHub Actions on every push (set up in M1).
 | Real server after reset | `GET /api/visits` gives 1; a headless Chrome load of the home page left it at 1 |
 | `npm run check` / build | 0 errors, 0 warnings, 0 hints / 3 pages |
 | Not tested | seeing the panel on the owner's real screen; Low Power Mode behaviour; two real devices |
+
+## 2026-10-29: counter with no cookie (D22)
+| Check | Result |
+|---|---|
+| Unit tests (`npm test`, written first, failed first) | 10 of 10 pass: robots, same-site, brake (burst, refuse, recover), GET never counts, person counts, robot not, cross-site 403, brake refuses, brake only used by real counts, other methods 405 |
+| Worker in Cloudflare's local runtime (`wrangler dev`) | GET 0; person +1; refresh +1 (by design); headless robot +0; curl +0; cross-site 403; PUT 405; `/api/other` 404; **0 cookies set**; answer headers nosniff, no-store, frame, referrer |
+| 8 simultaneous page loads | total rose by exactly 8 (no lost counts) |
+| Flood of 40 requests | total rose by 10 (the brake held) |
+| Real Chrome (user agent set to a normal browser) on the Worker | pill shows "Page views 1"; server total 1 after one load; `document.cookie` empty; console clean |
+| Pages and files vs the Worker | 4 pages/files: 0 Worker runs. Unknown addresses: they do run the Worker (accepted) |
+| `_headers` on the local Worker setup | nosniff, frame, referrer, permissions on pages; one-year cache on `/_astro/` files |
+| Local server (throwaway, port 4399) | person 1, refresh 2, robot 2, cross-site 403, PUT 405, 0 cookies; real data file untouched |
+| `wrangler deploy --dry-run` | bindings found: `PAGE_VIEWS` (Durable Object), `ASSETS` |
+| Built pages vs the previous commit | sign-in and list pages byte-identical; home page differs only by the counter's script filename |
+| `npm run check` / `npm audit` | 0 errors, 0 warnings, 0 hints / 0 vulnerabilities |
+| **Not tested** | the real deployment, the free daily limits being hit, real traffic, Safari/Firefox |

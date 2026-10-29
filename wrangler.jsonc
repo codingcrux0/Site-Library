@@ -1,12 +1,23 @@
-// Cloudflare hosting settings (Workers "static assets"): upload everything in dist/ and serve it as-is.
-// No Worker code runs, so every page request is a plain file and costs nothing.
-// "name" becomes the free address: <name>.<your-account>.workers.dev. Change it before the first deploy if you want another one.
-// compatibility_date = the day this config was written; it only matters for Worker code, which we do not have.
+// Cloudflare hosting settings. Two parts:
+//   1. Static assets: everything in dist/ (the built site) is served as plain files. Free and unlimited per Cloudflare's docs.
+//   2. A tiny Worker (worker/index.mjs) that ONLY answers /api/* : the page-view counter. Pages never wait for it.
+// "name" must match the project name in the Cloudflare dashboard, or the build fails. It also becomes the free address:
+// <name>.<your-account>.workers.dev.
+// compatibility_date = the day this was written; it fixes which Worker behaviours are used.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "site-library",
-  "compatibility_date": "2026-10-29",
+  "main": "./worker/index.mjs",
+  "compatibility_date": "2026-10-01",
   "assets": {
-    "directory": "./dist"
-  }
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Run the Worker first ONLY for these paths. Real pages and files never touch the Worker (checked). Unknown addresses do, and just get a 404.
+    "run_worker_first": ["/api/*"]
+  },
+  // Where the counter's one number lives. The class is created automatically on the first deploy (see "migrations").
+  "durable_objects": {
+    "bindings": [{ "name": "PAGE_VIEWS", "class_name": "PageViewCounter" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PageViewCounter"] }]
 }

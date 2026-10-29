@@ -8,6 +8,9 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
+## Counter (2026-10-29, newest)
+The header pill now says **"Page views"** and works **online** and locally with **no cookie** (DECISIONS D22). Code: `worker/` (Cloudflare Worker + Durable Object, rules in `visits-rules.mjs`, 10 tests: `npm test`) and `scripts/local-server.mjs`. It counts page loads, so a refresh counts again; the number online starts at 0. The old unique-browser cookie (D15) is retired.
+
 ## Current state (2026-10-28)
 - Project folder: `Documents/Anmol/Product-projects/site-library/` (git initialised, branch `main`, **no commits yet**).
 - M0 mostly done: stack (D1), threat model (SECURITY.md), docs, `.gitignore`, `research_template.csv`. Framework FINAL: Astro 7 + React islands + Tailwind 4 + shadcn structure (D2, D2a).
@@ -34,7 +37,7 @@ All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS,
 7. Teach the feature, ask the owner 2 questions, update the docs, and end with the report format.
 
 ## HARD GATES (nothing ships past these)
-- **COOKIE GATE (new 2026-10-29):** the home page sets a cookie to count unique visitors (DECISIONS.md D15). Before the site goes public, a qualified professional must say whether it needs a cookie notice or consent banner, and the privacy policy must describe it. Status: NOT DONE. Fine on localhost.
+- **COOKIE GATE (no longer triggered, 2026-10-29):** the counter has no cookie now (DECISIONS D22). If a cookie is ever added back (for example to count unique browsers again, D15), a qualified professional must first say whether it needs a consent notice, and the privacy policy must describe it.
 - **LEGAL GATE:** no real user accounts until a qualified professional (a lawyer; Claude cannot be one) has reviewed the privacy policy, the 18+ rule, and the India DPDP and EU GDPR notes. Status: NOT DONE.
 - **Security floor:** no known high or critical vulnerabilities at launch.
 - **Trust rules (spec section 4):** no entry is published unless `tested_by_owner = true` and it has a test date. Never invent facts about a listed site.

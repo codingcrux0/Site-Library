@@ -26,7 +26,7 @@ To change the address, edit `"name"` in `wrangler.jsonc` before the first deploy
 3. Save. From then on, every push to `main` goes live by itself.
 
 **Good to know:**
-- The "People visited" counter is **not** online. It needs `scripts/local-server.mjs`, which only runs on your computer. Online, the page simply shows no counter (no cookie is set either).
+- **The "Page views" counter works online** (`worker/index.mjs`, a tiny Worker plus one stored number in a Cloudflare Durable Object). It has **no cookie** and stores nothing about visitors. A refresh counts again, which is why it says "page views", not "people". It starts at 0 online. If its free daily allowance runs out, only the counter disappears; pages keep working. Details: `docs/DECISIONS.md` D22.
 - Sign-in is a design only. It is connected to nothing and says "Accounts are not open yet".
 - Free plan: requests for plain files are free and unlimited per Cloudflare's docs (checked 2026-10-29). Details in `docs/DECISIONS.md`.
 
@@ -48,6 +48,7 @@ You need Node.js 22.23.4 or newer (`node -v` to check), then `npm ci` once.
 | **Run the real site locally (with the counter)** | `npm run local`, then open http://localhost:4321. It builds first, then serves the site and `/api/visits`. Stop with Ctrl+C. The count is kept in `.data/visits.json` (delete the file to reset it to 0) |
 | Run the finished build without the counter | `npm run build && npm run preview -- --port 4321`. Stop with `npx astro preview stop` |
 | Type-check | `npm run check` |
+| Counter tests | `npm test` |
 | Production build (makes `dist/`) | `npm run build` |
 | Vulnerability audit | `npm audit` |
 
@@ -62,7 +63,8 @@ site-library/
 ├── package.json           commands and dependencies
 ├── docs/                  all the project notes (see "Docs" below)
 ├── public/                files served as they are: images, favicon, _headers
-├── scripts/               local-server.mjs (counter, local only)
+├── worker/                the online page-view counter (index.mjs) and its rules + tests
+├── scripts/               local-server.mjs (the same counter, on your computer only)
 ├── .github/workflows/     ci.yml (automatic checks)
 └── src/
     ├── pages/             one file per page: index, sign-in, websites
@@ -96,4 +98,4 @@ site-library/
 | `docs/COMPONENTS.md` | Component inventory and design tokens |
 | `docs/research_template.csv` | Columns for your research sheet |
 
-Hard gates before launch (see `docs/CONTEXT.md`): a lawyer must review the privacy policy and the 18+ rule before real accounts, and must say whether the unique-visitor cookie needs a consent notice before the counter goes online.
+Hard gates before launch (see `docs/CONTEXT.md`): a lawyer must review the privacy policy and the 18+ rule before real accounts, and must review the privacy policy. (The old unique-visitor cookie was removed on 2026-10-29; if it ever comes back, a lawyer must say whether it needs a consent notice.)
