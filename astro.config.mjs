@@ -3,6 +3,7 @@
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
+import preloadIslands from './scripts/preload-islands.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -10,7 +11,10 @@ export default defineConfig({
 	// That is what makes pages fast and lets Cloudflare Pages serve them for free.
 	output: 'static',
 	// React is only used for "islands": small interactive pieces on a page.
-	integrations: [react()],
+	integrations: [react(), preloadIslands()],
+	// Put the (small) stylesheet inside each page instead of a separate file: the browser will not start the page's scripts until a
+	// stylesheet has downloaded, so on a slow connection that one file delayed everything behind it.
+	build: { inlineStylesheets: 'always' },
 	vite: {
 		plugins: [tailwindcss()],
 	},

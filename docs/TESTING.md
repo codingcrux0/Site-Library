@@ -284,3 +284,17 @@ All of the above runs in GitHub Actions on every push (set up in M1).
 | `npm run check`, `npm test`, `npm audit`, gitleaks | 0 errors, 0 warnings, 0 hints / 10 of 10 / 0 vulnerabilities / no leaks |
 | **Not tested** | a real phone; the live site after this change; why Cloudflare routes workers.dev via Marseille for this location; other places' speeds |
 
+## 2026-10-29 (later): script chain and inline stylesheet (D26)
+| Check | Result |
+|---|---|
+| Live site, desktop, no throttle, 4 runs, after the phone picture shipped | first draw 7920 / 27380 / 8541 / 21882 ms; in run 1 the picture was done at 4.2 s but a 3.7 KB script took 4.5 s (jumpy route); run 4 the picture alone took 17.6 s. The route is unreliable right now, so single live numbers mean little |
+| Home page: baseline (live) vs new, 480 ms / 150 KB/s link, 3 runs each | 4719 / 4744 / 4741 ms vs 4663 / 4668 / 4658 ms (about the same: the picture dominates) |
+| Same, 1000 ms / 300 KB/s link, 3 runs each | 5574 / 5573 / 5569 ms vs 3832 / 3847 / 3854 ms (31% faster) |
+| Built home page | 9 `modulepreload` links (crowd, counter and what they import), 0 stylesheet links; sign-in and list pages: no preload links, stylesheet inline |
+| Scripts downloaded at load | only the crowd's and the counter's; the text animation and back-to-top scripts are still loaded later |
+| Page sizes (gzip), before to after | home 9.4 to 19.7 KB, sign-in 6.6 to 16.9 KB, list 1.8 to 12.1 KB (the stylesheet is now inside each page); JS 152.6 to 152.7 KB |
+| Button with its script blocked | still a clean black dot with only the click icon |
+| Back-to-top suite (desktop, phone, reduced motion), console on phone and desktop | all pass; no errors |
+| `npm run check`, `npm test`, `npm audit`, gitleaks | 0 errors, 0 warnings, 0 hints / 10 of 10 / 0 vulnerabilities / no leaks |
+| **Not tested** | a real phone; the live site's speed after this change (the route varies too much to compare single runs); other browsers |
+

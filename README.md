@@ -64,7 +64,7 @@ site-library/
 ├── docs/                  all the project notes (see "Docs" below); docs/brand/ = logo + link-preview sources
 ├── public/                files served as they are: images, favicon, logo icons, link-preview card, _headers
 ├── worker/                the online page-view counter (index.mjs) and its rules + tests
-├── scripts/               local-server.mjs (the same counter, on your computer only)
+├── scripts/               local-server.mjs (the same counter, on your computer only); preload-islands.mjs (build helper that speeds up the first load)
 ├── .github/workflows/     ci.yml (automatic checks)
 └── src/
     ├── pages/             one file per page: index, sign-in, websites
