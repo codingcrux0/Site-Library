@@ -61,8 +61,8 @@ site-library/
 ├── README.md              you are here
 ├── wrangler.jsonc         Cloudflare hosting settings
 ├── package.json           commands and dependencies
-├── docs/                  all the project notes (see "Docs" below)
-├── public/                files served as they are: images, favicon, _headers
+├── docs/                  all the project notes (see "Docs" below); docs/brand/ = logo + link-preview sources
+├── public/                files served as they are: images, favicon, logo icons, link-preview card, _headers
 ├── worker/                the online page-view counter (index.mjs) and its rules + tests
 ├── scripts/               local-server.mjs (the same counter, on your computer only)
 ├── .github/workflows/     ci.yml (automatic checks)
@@ -83,6 +83,8 @@ site-library/
 | The feature cards on the sign-in page | `src/config/showcase.ts` |
 | The animated mini screens | `src/components/scenes/scene.tsx` and `src/styles/scenes.css` |
 | Colours and design tokens | `src/styles/global.css` |
+| The logo, favicon, or the link-preview card | the sources in `docs/brand/`, then `node docs/brand/make-brand.mjs` |
+| The site address used in link previews | `url` in `src/config/site.ts` |
 
 ## Docs
 
@@ -92,7 +94,7 @@ site-library/
 | `docs/project_spec.md` | The product spec |
 | `docs/ARCHITECTURE.md` | How the pieces fit |
 | `docs/SECURITY.md` | Threat model, permission table, controls |
-| `docs/DECISIONS.md` | What we chose and why (D1 to D24) |
+| `docs/DECISIONS.md` | What we chose and why (D1 to D25) |
 | `docs/TESTING.md` | What has been verified, with real results |
 | `docs/INCIDENT.md` | What to do when something goes wrong |
 | `docs/COMPONENTS.md` | Component inventory and design tokens |

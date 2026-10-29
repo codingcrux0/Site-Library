@@ -8,7 +8,10 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
-## Glitch, crowd start and phone load (2026-10-29, newest of all, D24)
+## Logo and link preview (2026-10-29, newest of all, D25)
+New tick logo, favicon, phone home-screen icon and a 1200x630 link-preview card, with the tags on every page. The images are re-made with `node docs/brand/make-brand.mjs`. `SITE.url` in `src/config/site.ts` must change when the site gets its own domain. **Owner to check the real preview by posting the link (see D25 for the old-preview caching note).**
+
+## Glitch, crowd start and phone load (2026-10-29, D24)
 The word glitched over the back-to-top button was a real bug (server-made HTML had no opacity on its layers); fixed and checked. The crowd now starts loading earlier and in parallel with its picture (3.6 s to 3.1 s on slow 3G in my test), and phones draw at most 45 walkers (`PHONE_FIGURES`). **The phone lag itself could not be reproduced in a test browser; owner to confirm on a real phone.**
 
 ## Phone scroll fix + back-to-top button (2026-10-29, D23)

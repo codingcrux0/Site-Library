@@ -1,6 +1,7 @@
 ---
 // The shared page shell: <head> tags and the global stylesheet. Every page wraps itself in this.
 import '@/styles/global.css';
+import { SITE } from '@/config/site';
 
 interface Props {
 	title: string;
@@ -8,6 +9,11 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+
+// Link previews need full addresses (not "/og-image.png"). SITE.url is set in src/config/site.ts.
+const pageUrl = new URL(Astro.url.pathname, SITE.url).href;
+const imageUrl = new URL('/og-image.png', SITE.url).href;
+const imageAlt = `${SITE.name}: a black check mark logo and the words "Useful websites, tested by hand".`;
 ---
 
 <html lang="en">
@@ -17,12 +23,26 @@ const { title, description } = Astro.props;
 		<title>{title}</title>
 		<meta name="description" content={description} />
 		<meta name="theme-color" content="#ffffff" />
-		<!-- Basic social preview text. Preview images come in milestone M7. -->
+		<!-- What shows when the link is pasted into X, WhatsApp, Slack, Discord... (the picture is made by docs/brand/make-brand.mjs). -->
 		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content={SITE.name} />
+		<meta property="og:url" content={pageUrl} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
+		<meta property="og:image" content={imageUrl} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content={imageAlt} />
+		<!-- "summary_large_image" = X shows the big picture card instead of a small grey square. -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={imageUrl} />
+		<meta name="twitter:image:alt" content={imageAlt} />
+		<link rel="canonical" href={pageUrl} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		<link rel="icon" href="/favicon.ico" sizes="48x48" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<!-- A page can add its own head tags here (the home page preloads its big picture). -->
 		<slot name="head" />
 	</head>

@@ -258,3 +258,13 @@ All of the above runs in GitHub Actions on every push (set up in M1).
 | JS (gzip) | 152.6 KB (unchanged) |
 | **Not tested** | a real phone (the lag itself), real Safari/Firefox, the live Cloudflare site, the effect of the cache rule on Cloudflare |
 
+## 2026-10-29: logo, favicon and link preview (D25)
+| Check | Result |
+|---|---|
+| Images made | `og-image.png` 1200x630 (48 KB), `apple-touch-icon.png` 180x180, `favicon.ico` with 16/32/48 px pictures, `favicon.svg` |
+| Looked at | the tick at 16, 32, 48 px on light and dark tab colours (crisp, corners see-through); the 180 px home-screen icon; the card at full size |
+| Built pages (home, sign-in, list) | each has `og:image` (full address), width/height/alt, `twitter:card = summary_large_image`, `canonical`, favicon and `apple-touch-icon` links; `og:url` differs per page |
+| Files served by a local compressing server | `/og-image.png` 200 image/png; `/apple-touch-icon.png` 200 image/png; `/favicon.ico` 200 image/x-icon; `/favicon.svg` 200 image/svg+xml |
+| `npm run check`, `npm test`, `npm audit`, gitleaks | 0 errors, 0 warnings, 0 hints / 10 of 10 / 0 vulnerabilities / no leaks |
+| **Not tested** | the card in real X, WhatsApp, Slack or Discord (they fetch it only from the live site); Safari/Firefox tab icons; the old-preview caching behaviour |
+
