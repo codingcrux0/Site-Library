@@ -30,6 +30,8 @@ const year = new Date().getFullYear();
 ---
 
 <Layout title={`${SITE.name}: useful websites, tested by hand`} description={SITE.description}>
+	<!-- Start downloading the crowd picture right away, at low priority (after the page's own files), instead of waiting for the crowd's script to ask for it. -->
+	<link slot="head" rel="preload" as="image" href="/images/open-peeps-crowd.png" fetchpriority="low" />
 	<SiteHeader>
 		<!-- client:idle = load its JavaScript once the browser has finished the important work, so the hero stays instant. -->
 		<VisitCounter client:idle />
@@ -41,10 +43,10 @@ const year = new Date().getFullYear();
 			<LandingHero />
 		</div>
 
-		<!-- The crowd. client:visible = only load its JavaScript when it scrolls into view. -->
+		<!-- The crowd. client:visible = load its JavaScript when it is about to scroll into view (rootMargin = start 800px early, so it is ready on arrival). -->
 		<!-- Fixed height on phones (screen-height units left a big empty gap there). -->
 		<div class="h-[440px] sm:h-[clamp(520px,70vh,680px)]">
-			<Skiper39 client:visible label="Built for builders" />
+			<Skiper39 client:visible={{ rootMargin: '800px' }} label="Built for builders" />
 		</div>
 
 		<!-- Scroll animation: sentences assemble letter by letter, with the framework logos in the middle. -->
@@ -79,9 +81,9 @@ const year = new Date().getFullYear();
 	</main>
 
 	<footer class="border-t border-line-subtle">
-		<!-- The button hydrates (gets its JavaScript) only when it scrolls into view, so it costs nothing on arrival. -->
+		<!-- The button gets its JavaScript shortly before it scrolls into view, so it costs nothing on arrival and works the moment you reach it. -->
 		<div class="flex justify-center pt-12">
-			<BackToTop client:visible />
+			<BackToTop client:visible={{ rootMargin: '400px' }} />
 		</div>
 		<div class="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-8 text-sm text-ink-muted sm:flex-row sm:justify-between">
 			<p>&copy; {year} {SITE.name}</p>

@@ -30,7 +30,10 @@ export default function BackToTop() {
 
   // One transition for everything, so "reduce motion" needs one switch.
   const transition = reduceMotion ? { duration: 0 } : { type: "spring" as const, bounce: 0.16 };
+  // initial={false} = "start already in the resting state". Without it, the server-made HTML had no opacity on these layers,
+  // so "Back to top" and the arrow sat on top of the click icon until the script loaded (a few seconds on a slow phone).
   const fade = (visible: boolean, delay = 0) => ({
+    initial: false as const,
     animate: { opacity: visible ? 1 : 0 },
     transition: reduceMotion ? { duration: 0 } : { duration: 0.2, delay: visible ? delay : 0 },
   });

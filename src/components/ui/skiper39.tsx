@@ -15,7 +15,14 @@ import { useEffect, useRef, useState } from "react";
  * - Can skip figures in the sheet (we skip the 4 holding knives).
  * - Uses w-full instead of w-screen (w-screen caused a sideways scrollbar on desktop).
  * - Removed "use client" (a Next.js-only line; Astro uses client:* directives instead).
+ * - Loads faster: the page preloads the picture while this script downloads (it used to wait for the script, then fetch the
+ *   picture: one slow step after another), and the picture is decoded off the main thread so the first frame does not hitch.
+ * - Lighter on phones: at most PHONE_FIGURES figures at once on narrow screens. Phones draw them 60 times a second on a weak
+ *   graphics chip, and most figures were hidden behind others anyway.
  */
+
+// Most figures on screen at once on a narrow screen (under 640px). Wider screens show all of them.
+const PHONE_FIGURES = 45;
 
 interface CrowdCanvasProps {
   /** A sprite sheet: a grid of figures. `rows` = figures across, `cols` = figures down (names kept from the original). */
@@ -217,7 +224,9 @@ const CrowdCanvas = ({
         available.push(peep);
       }
       // Start everyone part-way through their walk, so the street is already busy.
-      while (available.length) addToCrowd().progress(Math.random());
+      // Figures left in `available` step in later, as walkers leave (see onComplete in startWalk).
+      const limit = stage.width < 640 ? PHONE_FIGURES : Infinity;
+      while (available.length && crowd.length < limit) addToCrowd().progress(Math.random());
       render();
     };
 
@@ -254,7 +263,7 @@ const CrowdCanvas = ({
       updateRunning();
     });
 
-    img.onload = () => {
+    const start = () => {
       if (cancelled) return;
       loaded = true;
       createPeeps();
@@ -264,13 +273,15 @@ const CrowdCanvas = ({
       updateRunning();
     };
     img.src = src;
+    // decode() resolves once the picture is fully downloaded AND unpacked in the background. If it fails, the picture is
+    // missing, so the canvas just stays empty (drawing a broken image would throw).
+    img.decode().then(start, () => {});
 
     resizeObserver.observe(canvas);
     visibilityObserver.observe(canvas);
 
     return () => {
       cancelled = true;
-      img.onload = null;
       resizeObserver.disconnect();
       visibilityObserver.disconnect();
       gsap.ticker.remove(render);

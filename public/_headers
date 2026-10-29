@@ -11,3 +11,7 @@
 # Build files have fingerprinted names (the name changes when the content does), so browsers can keep them for a year.
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Pictures keep their names when edited, so they cannot be cached "forever". One day means a repeat visit does not download the 380 KB crowd picture again.
+/images/*
+  Cache-Control: public, max-age=86400

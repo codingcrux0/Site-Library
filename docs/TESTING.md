@@ -240,3 +240,21 @@ All of the above runs in GitHub Actions on every push (set up in M1).
 | Other pages | sign-in and list pages differ from the previous build only by the stylesheet's file name |
 | JS (gzip) | 150.4 to 152.6 KB (+2.2 KB, loaded at the end of the page only) |
 | **Not tested** | a real phone (iPhone or Android), the real address bar, Safari, Firefox, the button on a real touch screen |
+
+## 2026-10-29: back-to-top glitch, crowd start, phone load (D24)
+| Check | Result |
+|---|---|
+| Glitch reproduced (phone size, button's script blocked) | before: "Back" drawn over the click icon, dot grey; after: clean black dot with the icon only |
+| Server-made HTML of the button | before: no opacity on the layers; after: `opacity:1` (icon), `0` (words), `0` (arrow) |
+| Crowd first drawn, fast 3G + 4x CPU, compressed server, 3 runs each | old 3578 / 3585 / 3600 ms; new 3092 / 3104 / 3109 ms. Low-priority hint vs none: no difference (3.10 s), kept low |
+| Crowd first drawn, 4G + 4x CPU (uncompressed server) | 1202 ms to 981 ms |
+| Crowd graphics work over 4 s (trace, computer's GPU, 3 runs) | GPUTask about 190 ms to 111 / 150 / 138 ms; FireAnimationFrame about 207 ms to 79 / 111 / 107 ms |
+| Whole-page scroll sweep, phone size, 4x and 6x CPU | no long tasks, no frame over 40 ms, about 1 s of total work (before and after: nothing to compare, nothing was slow here) |
+| WebP instead of the PNG | rejected: 630 KB at best quality against 380 KB |
+| Crowd after the change | full and normal at 390 and 1440 wide; pause stops it (0 pixels change), play restarts it; resize 1440 to 390 to 1440 redraws |
+| Button script loads before the button is reached | yes (loaded while the button was 300px below the screen) |
+| Back-to-top suite (desktop, phone, reduced motion) | hover/focus open, Enter/click/tap scroll to top (1.4 s / 2.0 s; 102 ms with reduce motion); console clean |
+| `npm run check`, `npm test`, `npm audit`, gitleaks | 0 errors, 0 warnings, 0 hints / 10 of 10 / 0 vulnerabilities / no leaks |
+| JS (gzip) | 152.6 KB (unchanged) |
+| **Not tested** | a real phone (the lag itself), real Safari/Firefox, the live Cloudflare site, the effect of the cache rule on Cloudflare |
+
