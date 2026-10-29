@@ -2,6 +2,7 @@
 import LandingHero from '@/components/landing/LandingHero';
 import SiteHeader from '@/components/SiteHeader.astro';
 import VisitCounter from '@/components/VisitCounter';
+import BackToTop from '@/components/ui/back-to-top';
 import Skiper39 from '@/components/ui/skiper39';
 import StackedSections from '@/components/ui/stacked-sections';
 import Skiper31 from '@/components/ui/text-scroll-animation';
@@ -78,12 +79,16 @@ const year = new Date().getFullYear();
 	</main>
 
 	<footer class="border-t border-line-subtle">
+		<!-- The button hydrates (gets its JavaScript) only when it scrolls into view, so it costs nothing on arrival. -->
+		<div class="flex justify-center pt-12">
+			<BackToTop client:visible />
+		</div>
 		<div class="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-8 text-sm text-ink-muted sm:flex-row sm:justify-between">
 			<p>&copy; {year} {SITE.name}</p>
 			<!-- Credit required by the Skiper UI free license. -->
 			<!-- {' '} = an explicit space; Astro drops the line break between text and a link. -->
 			<p>
-				Crowd animation adapted from{' '}
+				Crowd animation and back-to-top button adapted from{' '}
 				<a href="https://skiper-ui.com" rel="noopener noreferrer" class="underline underline-offset-4 hover:text-ink-primary">Skiper UI</a>.
 				Illustrations by{' '}
 				<a href="https://www.openpeeps.com/" rel="noopener noreferrer" class="underline underline-offset-4 hover:text-ink-primary">Open Peeps</a>.

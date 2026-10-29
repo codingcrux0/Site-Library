@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import type { CSSProperties } from "react";
 import Scene from "@/components/scenes/scene";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/config/categories";
@@ -15,15 +16,21 @@ import type { Category } from "@/config/categories";
  *   The "black bar sweeps across and reveals the text" effect is plain CSS (src/styles/reveal.css);
  *   src/scripts/reveal-on-scroll.ts only switches it on when a box scrolls into view.
  * - Real headings (h3) and a screen-reader section name replace the demo's four big <h1>s.
- * - h-dvh instead of h-screen: on phones, h-screen is taller than the visible area when the address bar shows.
+ * - h-lvh instead of h-screen or h-dvh. On a phone, "dvh" changes size every time the address bar slides in or out,
+ *   so every box is re-measured in the middle of a scroll (worst when scrolling up, when the bar comes back).
+ *   "lvh" is the screen height with the bar hidden and never changes. While the bar is showing, a box is a few
+ *   pixels taller than what you see, which is not noticeable. (Browser behaviour from the CSS spec; a phone's address
+ *   bar cannot be copied exactly in a desktop test browser, so this was not measured, only checked for no visual change.)
  */
 
 // Faint square grid that fades out downwards. Decorative only.
+// The fade is a third gradient painted in the box's own colour (--box-tint) over the lines (the first background layer is the top one), not a CSS "mask":
+// the picture is identical, but a mask makes the phone's graphics chip draw an extra full-screen layer for every box.
 const GRID =
-  "absolute inset-0 bg-[linear-gradient(to_right,rgba(11,13,16,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(11,13,16,0.06)_1px,transparent_1px)] bg-[size:54px_54px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]";
+  "absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,transparent_70%,var(--box-tint)_100%),linear-gradient(to_right,rgba(11,13,16,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(11,13,16,0.06)_1px,transparent_1px)] bg-[size:100%_100%,54px_54px,54px_54px]";
 
 // Shared by the picture and the animated scene. The height cap keeps both columns on one phone screen.
-const PICTURE = "aspect-[4/3] max-h-[28dvh] w-full rounded-3xl md:max-h-none";
+const PICTURE = "aspect-[4/3] max-h-[28lvh] w-full rounded-3xl md:max-h-none";
 
 export default function StackedSections({ items }: { items: Category[] }) {
   return (
@@ -40,13 +47,15 @@ export default function StackedSections({ items }: { items: Category[] }) {
             key={item.name}
             aria-labelledby={`category-${index}`}
             data-reveal-box
+            // "bg-tint-sky" -> var(--tint-sky): the colour the grid fades into.
+            style={{ "--box-tint": `var(--${item.tint.replace("bg-", "")})` } as CSSProperties}
             className={cn(
               // sticky + one screen tall = the stacking effect. The soft shadow shows where one box ends and the next begins.
-              "sticky top-0 h-dvh overflow-hidden rounded-t-[2rem] border-t border-line-subtle shadow-[0_-12px_24px_-16px_rgba(11,13,16,0.18)]",
+              "sticky top-0 h-lvh overflow-hidden rounded-t-[2rem] border-t border-line-subtle shadow-[0_-12px_24px_-16px_rgba(11,13,16,0.18)]",
               // The gap under every box except the last is a short "pause": the box stays fully in view for 30% of a
               // screen of scrolling before the next one starts to cover it. Kept short on purpose: a long pause felt
               // like the page had stopped (owner feedback). To tune: bigger = more time to read, smaller = less "stuck".
-              index < items.length - 1 && "mb-[30dvh]",
+              index < items.length - 1 && "mb-[30lvh]",
               item.tint,
             )}
           >

@@ -224,3 +224,19 @@ All of the above runs in GitHub Actions on every push (set up in M1).
 | Built pages vs the previous commit | sign-in and list pages byte-identical; home page differs only by the counter's script filename |
 | `npm run check` / `npm audit` | 0 errors, 0 warnings, 0 hints / 0 vulnerabilities |
 | **Not tested** | the real deployment, the free daily limits being hit, real traffic, Safari/Firefox |
+
+## 2026-10-29: phone scroll-up lag and back-to-top button (D23)
+| Check | Result |
+|---|---|
+| Phone test (390x844, touch, 4x slower CPU) scrolling up from the end with the address bar moving | Could not tell `dvh` from `lvh`: this test browser shrinks every viewport unit when its window shrinks. Numbers were the same before and after (22 layouts); a single 167 ms stall in the first run did not repeat (33 ms), so it is **not** claimed as evidence |
+| Same without the address bar moving | smooth: 6 layouts, worst frame gap 17 ms |
+| Grid without the CSS mask vs the old version | 4 boxes at laptop and phone size: biggest difference 3 to 5 of 255; 0 pixels differ by more than 6 except an animation on another frame (145 px) |
+| Back-to-top: mouse hover | opens 60 to 200 px; closes on leaving |
+| Back-to-top: keyboard focus, then Enter | opens; scrolls from y=7374 to 0 in 1441 ms; focus moves to the header link |
+| Back-to-top: mouse click / finger tap (touch emulation) | to the top in 1.4 s / 2.0 s; after the tap the button is closed again |
+| Back-to-top with "reduce motion" | jumps to the top in 103 ms (no smooth scroll) |
+| Console / sideways scroll | no errors; no sideways scroll at 1440, 820, 390, 320 |
+| `npm run check`, `npm test`, `npm audit` | 0 errors, 0 warnings, 0 hints / 10 of 10 / 0 vulnerabilities |
+| Other pages | sign-in and list pages differ from the previous build only by the stylesheet's file name |
+| JS (gzip) | 150.4 to 152.6 KB (+2.2 KB, loaded at the end of the page only) |
+| **Not tested** | a real phone (iPhone or Android), the real address bar, Safari, Firefox, the button on a real touch screen |
