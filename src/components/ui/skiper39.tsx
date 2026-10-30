@@ -351,7 +351,7 @@ const Skiper39 = ({
         type="button"
         onClick={() => setPaused((value) => !value)}
         aria-label={paused ? "Play the crowd animation" : "Pause the crowd animation"}
-        className="absolute bottom-4 right-4 z-10 grid size-8 cursor-pointer place-items-center rounded-full border border-line-subtle bg-surface-base/90 text-ink-secondary transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className="absolute bottom-4 left-4 z-10 grid size-8 cursor-pointer place-items-center rounded-full border border-line-subtle bg-surface-base/90 text-ink-secondary transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         {paused ? (
           <Play size={12} aria-hidden="true" />

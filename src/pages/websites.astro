@@ -1,19 +1,41 @@
 ---
 import SiteHeader from '@/components/SiteHeader.astro';
+import { ThemeDock } from '@/components/ThemeDock';
+import LibraryPage from '@/components/library/LibraryPage';
+import { CATEGORIES } from '@/config/categories';
+import { ENTRIES } from '@/config/library';
 import { SITE } from '@/config/site';
+import { TAG_GROUPS } from '@/config/tags';
 import Layout from '@/layouts/main.astro';
+
+// The real list is empty until tested entries are added to src/config/library.ts.
+// Only `npm run dev` on your computer fills it with labelled demo rows, so the design can be seen with 20 pages.
+// import.meta.env.DEV is false in the build, so the live site never contains the demo rows.
+const entries = import.meta.env.DEV ? (await import('@/config/library-preview')).previewEntries(TAG_GROUPS) : ENTRIES;
+
+const categories = CATEGORIES.map((category) => category.name);
 ---
 
 <Layout title={`The list | ${SITE.name}`} description="The list of tested websites.">
-	<SiteHeader />
-	<main class="mx-auto max-w-6xl px-6 py-16 sm:py-24">
-		<a href="/" class="text-sm text-ink-secondary transition-colors hover:text-ink-primary">&larr; Home</a>
-		<h1 class="mt-8 text-[clamp(2.25rem,5vw,3.75rem)] leading-[1.05] font-bold tracking-tight">The list</h1>
-
-		<!-- Honest empty state. The rule: nothing is listed until it has been tested by hand and dated. -->
-		<p class="mt-6 max-w-xl text-lg leading-relaxed text-ink-secondary">
-			Nothing is listed yet. Each website is tried by hand first, then dated and scored, so the first
-			entries appear once they have been tested.
+	<SiteHeader>
+		<!--
+			Right side of the header: "How we test" and the search box.
+			The empty spot with id="header-search" is filled by the list island (see LibraryPage.tsx). Its size is fixed here,
+			so the header does not jump when the box appears. On phones the link hides and the box takes the room.
+		-->
+		<div class="flex min-w-0 flex-1 items-center justify-end gap-6">
+			<a href="/#how-we-test" class="hidden text-sm text-ink-secondary transition-colors hover:text-ink-primary sm:inline">How we test</a>
+			<div id="header-search" class="h-10 w-full sm:w-72"></div>
+		</div>
+	</SiteHeader>
+	<main class="mx-auto max-w-6xl px-6 pt-6 pb-20 sm:pt-10 sm:pb-24">
+		<h1 class="text-[clamp(2.25rem,5vw,3.75rem)] leading-[1.05] font-bold tracking-tight">The list</h1>
+		<p class="mt-4 mb-8 max-w-xl text-lg leading-relaxed text-ink-secondary">
+			Each website is tried by hand, then dated and scored. Nothing is listed until it has been tested.
 		</p>
+		<!-- client:load = the page's tabs, sidebar and page numbers need their script right away. The HTML is already complete without it. -->
+		<LibraryPage client:load entries={entries} categories={categories} />
 	</main>
+	<!-- The colour wheel and dark switch (client:idle: loads after the list's own script). -->
+	<ThemeDock client:idle />
 </Layout>

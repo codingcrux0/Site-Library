@@ -14,7 +14,7 @@ const columns = [
 ---
 
 <!-- Hidden on phones (display:none also stops the animation and the image downloads). -->
-<aside class="rv-slide relative hidden md:block" data-from="left">
+<aside class="rv-slide relative hidden md:block" data-from="left" data-keep-palette>
 	<div class="showcase absolute inset-4 overflow-hidden rounded-3xl border border-line-subtle bg-surface-sunken">
 		<div class="absolute inset-0 flex gap-4 px-4">
 			{
@@ -26,7 +26,7 @@ const columns = [
 							{[0, 1, 2].map((copy) => (
 								<div class="flex flex-col gap-4 pb-4" aria-hidden={copy > 0 ? 'true' : undefined}>
 									{column.cards.map((card) => (
-										<div class="overflow-hidden rounded-2xl border border-line-strong/50 bg-white/80">
+										<div class="overflow-hidden rounded-2xl border border-line-strong/50 bg-surface-raised/80">
 											<div class={cn('relative aspect-[4/3] w-full', card.tint)}>
 												{card.image ? (
 													<img
@@ -60,7 +60,7 @@ const columns = [
 		<div class="pointer-events-none absolute inset-x-0 top-0 h-28 rounded-t-3xl bg-linear-to-b from-surface-sunken to-transparent"></div>
 		<div class="pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-3xl bg-linear-to-t from-surface-sunken to-transparent"></div>
 		<!-- Honest label: these are the planned features of the site, none of them is live yet. -->
-		<p class="absolute top-4 left-4 z-10 rounded-full border border-line-subtle bg-white/90 px-3 py-1 text-xs font-medium text-ink-secondary">
+		<p class="absolute top-4 left-4 z-10 rounded-full border border-line-subtle bg-surface-raised/90 px-3 py-1 text-xs font-medium text-ink-secondary">
 			What's being built
 		</p>
 	</div>

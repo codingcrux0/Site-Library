@@ -27,14 +27,14 @@ import type { Category } from "@/config/categories";
 // The fade is a third gradient painted in the box's own colour (--box-tint) over the lines (the first background layer is the top one), not a CSS "mask":
 // the picture is identical, but a mask makes the phone's graphics chip draw an extra full-screen layer for every box.
 const GRID =
-  "absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,transparent_70%,var(--box-tint)_100%),linear-gradient(to_right,rgba(11,13,16,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(11,13,16,0.06)_1px,transparent_1px)] bg-[size:100%_100%,54px_54px,54px_54px]";
+  "absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,transparent_70%,var(--box-tint)_100%),linear-gradient(to_right,var(--grid-line)_1px,transparent_1px),linear-gradient(to_bottom,var(--grid-line)_1px,transparent_1px)] bg-[size:100%_100%,54px_54px,54px_54px]";
 
 // Shared by the picture and the animated scene. The height cap keeps both columns on one phone screen.
 const PICTURE = "aspect-[4/3] max-h-[28lvh] w-full rounded-3xl md:max-h-none";
 
 export default function StackedSections({ items }: { items: Category[] }) {
   return (
-    <section id="categories" aria-labelledby="categories-title">
+    <section id="categories" aria-labelledby="categories-title" data-keep-palette>
       <h2 id="categories-title" className="sr-only">
         Categories
       </h2>
@@ -77,7 +77,7 @@ export default function StackedSections({ items }: { items: Category[] }) {
                     />
                   ) : (
                     // The animated mini screen for this box (components/scenes/scene.tsx). Decorative.
-                    <div className={cn(PICTURE, "relative overflow-hidden border border-line-strong/60 bg-white/55")}>
+                    <div className={cn(PICTURE, "relative overflow-hidden border border-line-strong/60 bg-surface-raised/55")}>
                       <Scene name={item.scene} />
                     </div>
                   )}

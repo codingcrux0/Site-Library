@@ -298,3 +298,104 @@ All of the above runs in GitHub Actions on every push (set up in M1).
 | `npm run check`, `npm test`, `npm audit`, gitleaks | 0 errors, 0 warnings, 0 hints / 10 of 10 / 0 vulnerabilities / no leaks |
 | **Not tested** | a real phone; the live site's speed after this change (the route varies too much to compare single runs); other browsers |
 
+
+## 2026-10-30: list page (D27)
+| Check | Result |
+|---|---|
+| Page-number tests, written first | failed with "module not found" before the code; after: 6 of 6 pass (few pages, none, start, middle, end, wider window, out-of-range page, same length for 8, 9, 20 and 100 pages) |
+| `npm test` | 16 of 16 (10 counter tests + 6 page-number tests) |
+| `npm run check` | 0 errors, 0 warnings, 0 hints (39 files) |
+| Local preview (`npm run dev`), desktop 1440, phone 390, narrow 320, reduced motion | tabs switch and the blob lands exactly on the chosen tab (blob 169 px / 105 px = tab 169 px / 105 px); Top scored puts the highest score first; page numbers `1 2 3 4 5 … 20` to `1 … 4 5 6 … 20` to `1 … 16 17 18 19 20`; Previous disabled on page 1, Next disabled on page 20 ("Showing 153 to 160 of 160"); Frontend Components filters, the three "Coming next" categories are disabled and do nothing; "My lists" shows the placeholder and hides the page numbers; phone sidebar button opens and closes; no sideways scrolling at 320, 390 or 1440; console clean in all four runs |
+| Keyboard | End goes to the last tab, ArrowRight wraps to the first, Home goes to the first; focus follows |
+| Reduced motion | the goo filter computes to `none` (it is `url(#gooey-tabs-filter)` otherwise) |
+| Bug found and fixed | on a 320 px phone the Previous and Next arrows were cut off at the edges (buttons centred inside a too-narrow box); fixed with smaller buttons under 360 px and no centring of overflow |
+| Bug found and fixed | the "Layout preview" banner also showed on the "My lists" tab, where there are no rows |
+| Built site (what goes live) | 3 pages; no demo text in any file (0); `/websites` shows the empty state, count 0, disabled Previous and Next; with the script blocked the page looks the same as with it |
+| Home and sign-in pages | sign-in identical apart from the inlined stylesheet; home identical apart from the inlined stylesheet and the preload list (one small shared script split in two: 9 to 10 links). Home preloaded JavaScript 149,876 to 150,023 bytes gzipped |
+| Sizes (gzip) | home 19.6 to 20.7 KB, sign-in 16.8 to 17.8 KB, list page 12.1 to 17.5 KB (page + stylesheet); all JavaScript 156.1 to 162.0 KB (the new page's script only loads on `/websites`) |
+| `npm audit`, gitleaks (commits, and the working files with `--no-git`) | 0 vulnerabilities; no leaks either way |
+| **Not tested** | a real phone (the goo filter's smoothness on a weak chip is unknown); Safari and Firefox (SVG filters on HTML are well supported but not checked here); a screen reader; the live site (nothing was pushed); keyboard focus rings by eye |
+
+## 2026-10-30 (later): type a page number into the dots (D27)
+| Check | Result |
+|---|---|
+| `parsePage` tests, written first | failed with "does not provide an export named parsePage"; after: 10 of 10 in the file (digits, spaces, leading zeros, too big, zero, one page, empty, letters, minus, decimal, exponent, non-ASCII digits, null, a 400-digit number) |
+| Browser, desktop 1440, phone 390, narrow 320 | clicking the first dots opens the box with focus in it; letters and symbols are dropped; 12 + Enter goes to page 12 with focus on that button; 99 + Enter goes to page 20; 0 + Enter goes to page 1; empty Enter keeps the box open (`aria-invalid`); Escape closes it and returns focus to the dots; clicking away closes it; the second dots work too; console clean; the page never scrolls sideways |
+| Seen on screen | box matches the buttons' height on desktop and phone |
+| `npm run check`, `npm test`, `npm audit`, gitleaks | see the end of this round in the report |
+| **Not tested** | a real phone's on-screen number keyboard (it should show digits because of `inputMode="numeric"`); a screen reader; Safari and Firefox |
+
+## 2026-10-30 (later still): Go back link, no How we test, Oldest tab (D27)
+| Check | Result |
+|---|---|
+| Oldest tab (demo rows) | first row: All and Newest = Example website 1 (30 Oct 2026); Oldest = Example website 160 (24 May 2026); Top scored = Example website 115; Oldest on the last page starts with Example website 8 (23 Oct 2026), as it should |
+| Sidebar | links are Go back (/), Home (/), Sign in (/sign-in); the text "How we test" is not in the sidebar |
+| Bug found and fixed | five tabs do not fit on a phone and the strip scrolls; on 320 px the blob of "My lists" was clipped away (white text on white), on 390 px it was cut at the edge. Layer width is now the strip's full scroll width and the chosen tab is scrolled into view. After the fix: the blob and the chosen tab are the same size and place (318 px / 74 px) and fully visible at 390 and 320 px; seen on screen |
+| Regression: tabs, pages, categories, keyboard, reduced motion, typing a page number, at 1440, 390 and 320 px | all as before; console clean; no sideways scrolling of the page |
+| **Not tested** | a real phone; Safari and Firefox; a screen reader |
+
+## 2026-10-30 (later): all four categories, type filter, header search (D28)
+| Check | Result |
+|---|---|
+| Tests, written first | `src/lib/search.test.mjs` failed with "module not found" before any code; after: 19 of 19 pass (words in name, summary, category and tags; every word must match; category, any-of tags and words together; the input list is not changed; ghost completion: shortest match, capitals, exact, none, across a space; suggestions only from existing entries; tag counts; tag file has unique words and real categories; real entries follow the rules; demo rows: 160, 40 per category, known tags, none twice on a row) |
+| `npm test` | 39 of 39 (10 counter + 10 page-number + 19 search) |
+| `npm run check` | 0 errors, 0 warnings, 0 hints (44 files) |
+| Browser (localhost, demo rows), desktop 1440, phone 390, narrow 320 | all four categories show "40 sites" and offer only their own types (21, 18, 10, 10); "rea" shows a faint "ct" (colour is the text colour at 35% opacity), Tab accepts it (box = "react", 6 sites, every row has React, focus stays in the box), Escape and the clear button empty it (160 sites); "exa" suggests "mple website 1" and the right arrow accepts; Tab with no suggestion moves focus on |
+| Filter panel | opens with focus in its search box; "cs" lists CSS and Tailwind CSS; a nonsense word shows "No type matches that."; ticking CSS and Java gives 12 sites and every shown row has one of them; the panel stays open while ticking; Escape closes it and returns focus to the button; clicking elsewhere closes it; removing a chip updates the list |
+| Empty and edge states | no match shows "No sites match your search and types." and a button that clears both; ticking React then switching to AI Tools drops the chip; typing while on "My lists" jumps to "All sites"; the filter button is hidden on "My lists" |
+| Header | box sits top right (1440: 984 to 1272 px); on 390 and 320 it fills the room next to the logo; "How we test" is hidden under `sm`; the page never scrolls sideways; console clean in all three |
+| Seen on screen | ghost text, open filter panel (also at 320 px, it fits), chips, and the live-style empty page |
+| Bug found and fixed | at 320 px the panel's search hint was cut off ("React or CS"); shortened to "Search types" |
+| Test-script slips (not product bugs) | my old list test counted every `li` as a row (rows now hold tag labels); a selector matched the icon instead of the ghost layer |
+| Regression: tabs, goo blob, page numbers, typing a page number, keyboard, reduced motion, phone menu | all as before at 1440, 390, 320 and with reduced motion |
+| Built site (what goes live) | 3 pages; 0 files contain demo text; `/websites` shows counts of 0, the honest "Nothing is listed yet" (also per category), no suggestions while typing, all types with count 0 in the filter; the header spot is in the HTML |
+| Scripts blocked (built page, phone) | readable page; the filter button and search spot do nothing until the script loads |
+| Size | the list page's script went from about 6.3 KB to 8.8 KB gzipped (loads only on `/websites`) |
+| `npm audit`, gitleaks (commits, and working files with `--no-git`) | 0 vulnerabilities; no leaks either way |
+| **Not tested** | a real phone (typing, the on-screen keyboard's Search key, the ghost text lining up with other fonts); Safari and Firefox (including the hidden browser "x" in search boxes and `:has()` highlight on tick rows); a screen reader (the ghost is hidden from it on purpose, and I did not add a spoken "N results"); the live site (nothing is pushed) |
+
+## 2026-10-30 (later still): developer toolbar off, audit of supplied code (D29)
+| Check | Result |
+|---|---|
+| Toolbar | before: the dark Astro toolbar showed on localhost only; the built site had 0 files with it. After `devToolbar: { enabled: false }` and a dev-server restart: 0 toolbar elements in a real browser, page and list work as before, console clean |
+| Audit: source | one network call (the counter, `/api/visits`, same site); no analytics, tracking, cookies, storage, `eval`, `innerHTML`, external scripts, iframes or fonts; unknown hosts (`gxuri.me`, `codepen.io`) are credit text in code comments only |
+| Audit: built files | no outside `<script>`, `<link>`, `<iframe>` or `<img>` (only the site's own canonical link); two inline scripts, both Astro's own, with no outside addresses; outside names in the JS and CSS are comment or message text, not requests |
+| Credits left in on purpose | Skiper UI and Open Peeps in the home footer (licence / illustration credit): owner to decide |
+| `npm run check`, `npm test`, build, gitleaks | 0/0/0; 39 of 39; 3 pages, 0 files with demo text; no leaks |
+| **Not tested** | the live site (nothing is pushed); other computers' browser extensions (they can add their own bars; that is outside the site) |
+
+## 2026-10-30 (later): colour wheel and dark mode (D30)
+Tests were written first (`src/lib/theme.test.mjs`, 28 tests); the first run failed because the code did not exist. As a check that the tests can fail, the safety margin was lowered on purpose and 2 contrast tests failed; it was restored.
+| Check | Result |
+|---|---|
+| `npm test` | 67 of 67 pass (was 39). The new 28 cover: hex reading and refusing rubbish (`url(x)`, 8 digits, `#fff;color:red`), colour round trips, contrast values, 2,015 picked colours (15 awkward ones such as white, black, grey, yellow, plus 2,000 random) each giving every text colour at least 4.5:1 on every surface and white-on-accent at least 4.5:1 (also on hover), focus ring at least 3:1, hue kept, grey stays grey; saved-choice reading; the head script run against a fake page (nothing saved, a palette, dark, rubbish and injected names or `url()` values refused, blocked storage); the dark palette in the real `global.css` (every variable defined, text at least 4.5:1, same page colour as the script); no `bg-white` or `text-white` left in pages and components |
+| `npm run check` | 0 errors, 0 warnings, 0 hints (48 files) |
+| Real browser, 1440 px, home and list | picker opens (focus goes into it), preset, drag on the square and hue bar, typed hex (bright yellow), Escape closes and returns focus, click outside closes, dark on, wheel greyed with its note, reload keeps the choice and the head script had applied it BEFORE the page's scripts ran, back to light brings the colour back, Reset restores the original (nothing left in storage). Real text contrast measured on the live page: default 5.78 minimum; pink 4.71; dragged colour 6.73; yellow 4.67; dark 7.55. Console clean |
+| Phone 390 px and 320 px | picker fully on screen, no sideways scroll, same contrast results (violet 5.7, dark 7.55), home, four category boxes, crowd, steps, footer, list with filter and search, and sign-in checked in violet and in dark |
+| Keyboard only | Tab reaches the colour button, Enter opens it with focus on the colour square, arrow keys change the colour, Tab moves through the picker, Escape closes and returns focus, Enter on the moon switches dark |
+| Reduced motion | no page fade (0 s), all dock transitions off |
+| Normal motion | 120 ms after the switch the page colour is half-way (rgb 116,117,119), after 800 ms it is the dark colour, the fade class is removed again |
+| Scripts blocked | no dock buttons (not dead), pages render, no sideways scroll |
+| Found and fixed | focus did not move into the picker at once (it is still hidden for the first frame; now a 50 ms wait); the crowd's pause button sat under the dock; on phones the centred dock covered the "My lists" tab and the filter arrow (now bottom-right below 1280 px) |
+| Build, audit, scan | 3 pages built; `npm audit` 0 vulnerabilities; gitleaks no leaks (commits and files); no outside host in the new code; 0 files with demo rows ("Example website"); 0 Co-Authored-By lines; `package.json` differs from the last commit only by the test glob (no dependency added) |
+| Sizes (gzip) | home 22.4 KB (was 21.2), list page 19.2 KB (was 17.8), sign-in 19.4 KB (was 18.3); new dock script 6.7 KB, loaded when idle; list script unchanged (8.6 KB) |
+| **Not tested** | a real phone; Safari and Firefox (only Chrome); a screen reader; the live site (nothing is pushed); the crowd's frame rate in dark (no filter is used, so none is expected to change, but it was not measured); landscape phones (the picker scrolls if too tall, not seen); the contrast tool skips text over gradients and pictures, and the tab pill (white text on the pill reads 1.06 in the tool because the pill is a separate layer; it is visibly correct in the screenshots) |
+
+## 2026-10-30 (later still): the colour changes the whole page (D30 update)
+Tests first again: 4 new tests were written and failed (page not tinted, black swatch, shielding missing, X button colours missing), then the code was changed.
+| Check | Result |
+|---|---|
+| `npm test` | 72 of 72 pass (was 67). New: a colourful pick tints the page, boxes and borders (200+ picks); the tint grows with how colourful the pick is; white, grey, black and the black swatch keep a pure white page; the page stays bright (at least 13:1 against black) and text very dark for 2,015 colours; all text contrast rules (at least 4.5:1 on all four light surfaces) still hold with the stronger tints; the shielded cards and the X button's own variables exist in light and dark |
+| `npm run check` | 0 errors, 0 warnings, 0 hints |
+| Real browser, 1440 px, 6 picks (blue, pink, yellow, green, navy, the black swatch) | page colour: rgb(217,224,255), (255,217,234), (255,251,220), (215,255,230), (234,243,255), and pure white for the black swatch. In every pick the X button (black / white), the category card (colours, title, button) and the sign-in cards kept exactly their default computed colours. Real text contrast on the home page: 5.59, 4.71, 4.67, 4.78, 6.63, 6.63 (minimum 4.5). Dark mode still turns the cards dark and the page dark. Console clean |
+| Not tested | see the previous table; also the list page reading of 1.06 to 1.46 comes from the tool misreading the white text on the active tab pill (a separate layer), as before |
+
+## 2026-10-30 — dark mode: the category pictures (mini screens)
+
+| Check | Result |
+|---|---|
+| Problem found by the owner | In dark mode the mini screens in the category boxes lost their labels ("To do", "Doing", "Done") and bars: their text colour followed dark mode (light) but their cards are white. |
+| Fix | `.sc` (the mini screens) re-declares the light palette in `src/styles/global.css`, like `[data-keep-palette]`. The boxes around them and all other text stay dark. |
+| `npm test` | 73 of 73 pass. New test: the light palette is declared on `.sc` and the dark palette does not reach it. Watched it fail without the fix (a mutation check). An older shielding test read the wrong selector (it passed by accident); the lookup was fixed for both. |
+| Real browser, dark, 1440 px, all 4 boxes + sign-in showcase | text contrast minimum 7.55 in every box; console clean; screenshots read by eye. The Dev Tools terminal is a dark picture by design, so it sits dark on a dark box (visible, with a border). |
+| Not tested | a real phone, Safari, Firefox |

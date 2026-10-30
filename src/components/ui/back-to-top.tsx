@@ -53,7 +53,7 @@ export default function BackToTop() {
         animate={{ width: open ? OPEN : DOT }}
         transition={transition}
         style={{ height: DOT, width: DOT }}
-        className="relative block cursor-pointer overflow-hidden rounded-full bg-ink-primary text-white outline-offset-4 transition-colors hover:bg-[var(--action-primary-hover)] focus-visible:outline-2 focus-visible:outline-focus active:scale-95 motion-reduce:transition-none"
+        className="relative block cursor-pointer overflow-hidden rounded-full bg-action text-action-ink outline-offset-4 transition-colors hover:bg-[var(--action-primary-hover)] focus-visible:outline-2 focus-visible:outline-focus active:scale-95 motion-reduce:transition-none"
       >
         {/* The click icon: the resting face of the dot. Fades out as the button opens. */}
         <m.span aria-hidden="true" {...fade(!open)} className="absolute top-0 left-0 grid place-items-center" style={{ width: DOT, height: DOT }}>
@@ -74,7 +74,7 @@ export default function BackToTop() {
         <m.span
           aria-hidden="true"
           {...fade(open, 0.12)}
-          className="absolute top-0 right-0 grid place-items-center rounded-full bg-white/15"
+          className="absolute top-0 right-0 grid place-items-center rounded-full bg-action-ink/15"
           style={{ width: DOT, height: DOT }}
         >
           <ArrowUp className="size-5" strokeWidth={2.25} />

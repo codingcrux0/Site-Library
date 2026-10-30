@@ -73,7 +73,7 @@ export default function VisitCounter() {
   if (total === null) return null;
 
   return (
-    <p className="rv-pop inline-flex items-center gap-2.5 rounded-full border border-line-subtle bg-white px-3.5 py-1.5 text-sm text-ink-secondary">
+    <p className="rv-pop inline-flex items-center gap-2.5 rounded-full border border-line-subtle bg-surface-raised px-3.5 py-1.5 text-sm text-ink-secondary">
       {/* Small pulsing dot = "live". The pulse stops for people who asked for less motion. */}
       <span aria-hidden="true" className="relative flex size-2">
         <span className="absolute inset-0 rounded-full bg-emerald-500 opacity-60 motion-safe:animate-ping" />

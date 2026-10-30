@@ -12,7 +12,7 @@
     "local": "astro build && node scripts/local-server.mjs",
     "astro": "astro",
     "check": "astro check && tsc --noEmit",
-    "test": "node --test \"worker/*.test.mjs\""
+    "test": "node --test \"worker/*.test.mjs\" \"src/lib/*.test.mjs\""
   },
   "dependencies": {
     "@astrojs/react": "^7.1.1",

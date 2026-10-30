@@ -2,6 +2,7 @@
 // The shared page shell: <head> tags and the global stylesheet. Every page wraps itself in this.
 import '@/styles/global.css';
 import { SITE } from '@/config/site';
+import { THEME_BOOT_SCRIPT } from '@/lib/theme';
 
 interface Props {
 	title: string;
@@ -23,6 +24,8 @@ const imageAlt = `${SITE.name}: a black check mark logo and the words "Useful we
 		<title>{title}</title>
 		<meta name="description" content={description} />
 		<meta name="theme-color" content="#ffffff" />
+		<!-- Applies the saved colour or dark mode before the page draws, so there is no white flash (code and rules: src/lib/theme.ts). -->
+		<script is:inline set:html={THEME_BOOT_SCRIPT} />
 		<!-- What shows when the link is pasted into X, WhatsApp, Slack, Discord... (the picture is made by docs/brand/make-brand.mjs). -->
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content={SITE.name} />

@@ -1,6 +1,7 @@
 ---
 import LandingHero from '@/components/landing/LandingHero';
 import SiteHeader from '@/components/SiteHeader.astro';
+import { ThemeDock } from '@/components/ThemeDock';
 import VisitCounter from '@/components/VisitCounter';
 import BackToTop from '@/components/ui/back-to-top';
 import Skiper39 from '@/components/ui/skiper39';
@@ -87,7 +88,8 @@ const year = new Date().getFullYear();
 		<div class="flex justify-center pt-12">
 			<BackToTop client:visible={{ rootMargin: '400px' }} />
 		</div>
-		<div class="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-8 text-sm text-ink-muted sm:flex-row sm:justify-between">
+		<!-- The extra space at the bottom (below 1280px wide) keeps the floating colour buttons from covering the credit links when you reach the end. -->
+		<div class="mx-auto flex max-w-6xl flex-col gap-2 px-6 pt-8 pb-20 text-sm text-ink-muted min-[1280px]:pb-8 sm:flex-row sm:justify-between">
 			<p>&copy; {year} {SITE.name}</p>
 			<!-- Credit required by the Skiper UI free license. -->
 			<!-- {' '} = an explicit space; Astro drops the line break between text and a link. -->
@@ -99,6 +101,9 @@ const year = new Date().getFullYear();
 			</p>
 		</div>
 	</footer>
+
+	<!-- The colour wheel and dark switch. client:idle = loads after the important work, so the hero and the crowd are not slowed. -->
+	<ThemeDock client:idle />
 
 	<!-- Starts each category box's entrance animation when it scrolls into view. -->
 	<script>

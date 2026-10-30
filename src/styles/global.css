@@ -40,8 +40,14 @@
 }
 
 /* Light theme: bright, white, minimal. Text colors all pass WCAG AA contrast on white
-   (ink-muted #5f6673 is about 5.8:1; the minimum for normal text is 4.5:1). */
-:root {
+   (ink-muted #5f6673 is about 5.8:1; the minimum for normal text is 4.5:1).
+   [data-keep-palette] = the category cards and the sign-in cards: the colour wheel must not change them, so they declare the palette
+   again on themselves (a value set on the element itself wins over the one the wheel puts on <html>). Dark mode still reaches them.
+   .sc = the animated mini screens inside those pictures: they are white cards with dark bars, so they stay light in dark mode too
+   (otherwise their white labels would sit on white cards). They are pictures of the site, like a screenshot. */
+:root,
+[data-keep-palette],
+.sc {
   --surface-base: #ffffff;
   --surface-raised: #ffffff;
   --surface-sunken: var(--gray-1);
@@ -61,6 +67,40 @@
   --tint-sand: #f4eee3;
   --tint-sage: #e5efe7;
   --tint-lilac: #eeeaf7;
+  /* The X button in the header: its own colours, never changed by the colour wheel. */
+  --logo-bg: var(--redrob-black);
+  --logo-ink: #ffffff;
+  /* The faint grid lines in the category boxes. */
+  --grid-line: rgba(11, 13, 16, 0.06);
+}
+
+/* Dark theme: switched on by the moon button (src/components/ThemeDock.tsx), which sets data-theme="dark" on <html>.
+   It defines every colour the colour wheel can change, so the two never mix: the wheel's colours are removed while dark is on.
+   The light text colours below pass 4.5:1 on every dark surface (a test in src/lib/theme.test.mjs checks that). */
+html[data-theme="dark"],
+html[data-theme="dark"] [data-keep-palette] {
+  color-scheme: dark;
+  --surface-base: #0d0f13;
+  --surface-raised: #171b22;
+  --surface-sunken: #12151b;
+  --surface-brand-subtle: #1b2342;
+  --border-subtle: #262b35;
+  --border-strong: #3b4250;
+  --ink-primary: #f2f4f8;
+  --ink-secondary: #b8bfcb;
+  --ink-muted: #9ba3b1;
+  --ink-brand: #8ea2ff;
+  --action-primary: #f2f4f8;
+  --action-primary-hover: #d3d8e1;
+  --action-primary-ink: #0b0d10;
+  --focus-ring: #8ea2ff;
+  --tint-sky: #131a2b;
+  --tint-sand: #1c1913;
+  --tint-sage: #121c16;
+  --tint-lilac: #191525;
+  --logo-bg: #f2f4f8;
+  --logo-ink: #0b0d10;
+  --grid-line: rgba(255, 255, 255, 0.05);
 }
 
 
@@ -68,6 +108,12 @@
 @theme inline {
   --color-surface-base: var(--surface-base);
   --color-surface-sunken: var(--surface-sunken);
+  --color-surface-raised: var(--surface-raised);
+  --color-action: var(--action-primary);
+  --color-action-hover: var(--action-primary-hover);
+  --color-action-ink: var(--action-primary-ink);
+  --color-logo: var(--logo-bg);
+  --color-logo-ink: var(--logo-ink);
   --color-ink-primary: var(--ink-primary);
   --color-ink-secondary: var(--ink-secondary);
   --color-ink-muted: var(--ink-muted);
@@ -89,5 +135,22 @@
   }
   ::selection {
     background: var(--surface-brand-subtle);
+  }
+}
+
+/* A short fade for colours only while the colour wheel or the dark switch is used. The class is added by ThemeDock for
+   about half a second and then removed, so it never slows the page's own hover effects. Skipped for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-fade,
+  html.theme-fade *,
+  html.theme-fade *::before,
+  html.theme-fade *::after {
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      color 0.35s ease,
+      fill 0.35s ease,
+      stroke 0.35s ease,
+      outline-color 0.35s ease;
   }
 }

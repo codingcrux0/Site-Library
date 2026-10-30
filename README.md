@@ -67,13 +67,13 @@ site-library/
 ├── scripts/               local-server.mjs (the same counter, on your computer only); preload-islands.mjs (build helper that speeds up the first load)
 ├── .github/workflows/     ci.yml (automatic checks)
 └── src/
-    ├── pages/             one file per page: index, sign-in, websites
+    ├── pages/             one file per page: index, sign-in, websites (the list)
     ├── layouts/           main.astro (shared page shell)
-    ├── components/        ui/ (supplied components), landing/, auth/, scenes/, SiteHeader, VisitCounter
-    ├── config/            the words: site.ts, categories.ts (home boxes), showcase.ts (sign-in cards)
+    ├── components/        ui/ (supplied components), landing/, auth/, library/ (the list page), scenes/, SiteHeader, VisitCounter, ThemeDock (colour wheel and dark switch)
+    ├── config/            the words: site.ts, categories.ts (home boxes), showcase.ts (sign-in cards), library.ts (the list's entries), tags.ts (the type words)
     ├── styles/            global.css (colours, Tailwind), hero.css, reveal.css, scenes.css
     ├── scripts/           small browser scripts (box entrance, sign-in form)
-    └── lib/               utils.ts (class-name helper)
+    └── lib/               utils.ts (class-name helper), page-range.ts (which page numbers to show), search.ts (search, filter, ghost text), theme.ts (colour wheel and dark mode rules) + their tests
 ```
 
 | To change... | Edit |
@@ -81,6 +81,10 @@ site-library/
 | Site name and links | `src/config/site.ts` |
 | The words and picture of each home box | `src/config/categories.ts` |
 | The feature cards on the sign-in page | `src/config/showcase.ts` |
+| The websites on the list page (only tested, dated ones) | `ENTRIES` in `src/config/library.ts` |
+| The type words (React, CSS, Java...) used by the filter and each entry's `tags` | `src/config/tags.ts` |
+| The demo rows seen only on your computer | `src/config/library-preview.ts` (never in the live build) |
+| The colour wheel, dark switch and their colour rules | `src/components/ThemeDock.tsx`, `src/lib/theme.ts`, dark palette in `src/styles/global.css` |
 | The animated mini screens | `src/components/scenes/scene.tsx` and `src/styles/scenes.css` |
 | Colours and design tokens | `src/styles/global.css` |
 | The logo, favicon, or the link-preview card | the sources in `docs/brand/`, then `node docs/brand/make-brand.mjs` |
@@ -94,7 +98,7 @@ site-library/
 | `docs/project_spec.md` | The product spec |
 | `docs/ARCHITECTURE.md` | How the pieces fit |
 | `docs/SECURITY.md` | Threat model, permission table, controls |
-| `docs/DECISIONS.md` | What we chose and why (D1 to D26) |
+| `docs/DECISIONS.md` | What we chose and why (D1 to D30) |
 | `docs/TESTING.md` | What has been verified, with real results |
 | `docs/INCIDENT.md` | What to do when something goes wrong |
 | `docs/COMPONENTS.md` | Component inventory and design tokens |
