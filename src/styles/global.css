@@ -78,7 +78,8 @@
    It defines every colour the colour wheel can change, so the two never mix: the wheel's colours are removed while dark is on.
    The light text colours below pass 4.5:1 on every dark surface (a test in src/lib/theme.test.mjs checks that). */
 html[data-theme="dark"],
-html[data-theme="dark"] [data-keep-palette] {
+html[data-theme="dark"] [data-keep-palette],
+html[data-tone="dark"] [data-keep-palette] {
   color-scheme: dark;
   --surface-base: #0d0f13;
   --surface-raised: #171b22;
@@ -103,6 +104,13 @@ html[data-theme="dark"] [data-keep-palette] {
   --grid-line: rgba(255, 255, 255, 0.05);
 }
 
+
+/* A dark colour picked on the colour wheel makes a dark page in that colour (the colours come from the wheel, inline on <html>).
+   This tells the browser to draw scrollbars and form controls dark to match. The category cards and sign-in cards then take the dark look
+   too (see the dark block above): bright cards on a dark page would glow. */
+html[data-tone="dark"] {
+  color-scheme: dark;
+}
 
 /* Expose the tokens as Tailwind classes: text-ink-muted, bg-surface-base, border-line-subtle... */
 @theme inline {

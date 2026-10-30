@@ -399,3 +399,14 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 | `npm test` | 73 of 73 pass. New test: the light palette is declared on `.sc` and the dark palette does not reach it. Watched it fail without the fix (a mutation check). An older shielding test read the wrong selector (it passed by accident); the lookup was fixed for both. |
 | Real browser, dark, 1440 px, all 4 boxes + sign-in showcase | text contrast minimum 7.55 in every box; console clean; screenshots read by eye. The Dev Tools terminal is a dark picture by design, so it sits dark on a dark box (visible, with a border). |
 | Not tested | a real phone, Safari, Firefox |
+
+## 2026-10-30 — dark picks make a dark site in that colour
+
+| Check | Result |
+|---|---|
+| Problem found by the owner | Picking `#010411` left the page white (very dark picks were deliberately mapped to the original white page). |
+| `npm test` | 82 of 82 pass (was 73). New, written first (they failed with `pickIsDark` missing): which picks count as dark; a dark pick becomes the page colour with light text; boxes step up, hue kept; black pick stays neutral; light picks never turn dark; the saved `tone` and the head script set `data-tone`; cards follow the dark look on a dark pick. Old tests that assumed "dark pick = white page" were changed on purpose. |
+| Sweep of every 3rd value of red, green and blue | 636,056 colours, 51,899 of them dark: 0 failures of text 4.5:1 on all 8 surfaces, brand text 4.5:1, button writing 4.5:1 (also hovered), focus ring 3:1. |
+| `npm run check` | 0 errors, 0 warnings, 0 hints |
+| Real browser, 1440 px, `#010411`, `#0b1f4d`, `#04201a`, `#db2777` | typed in the picker's hex box: page rgb(1,4,17), `data-tone=dark`, scrollbar scheme dark; saved with tone; reload keeps it on home, list, sign-in; moon button wins then returns to the pick; Reset clears storage and the page is white. Text contrast on home: min 8.64, 9.15, 8.62 (dark picks) and 4.71 (pink, unchanged). Category cards: dark look on dark picks; unchanged light palette on pink. X chip colour unchanged in all four. Console clean. Screenshots read by eye (home, list, crowd, cards). |
+| Not tested | a real phone, Safari, Firefox; the live site (not pushed yet); the list-page contrast tool reads the active tab pill as 1.01 (the known tool artifact, the screenshot shows dark text on a light pill) |

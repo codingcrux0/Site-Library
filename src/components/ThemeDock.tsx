@@ -1,14 +1,15 @@
 import { MoonStar, RotateCcw, Sun } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ColorPickerPanel, type ChangeSource } from "@/components/ui/color-picker";
-import { DARK_BASE, STORAGE_KEY, THEME_VARS, type ThemeChoice, deriveTheme, parseStored, serializeTheme } from "@/lib/theme";
+import { DARK_BASE, STORAGE_KEY, THEME_VARS, type ThemeChoice, deriveTheme, parseStored, pickIsDark, serializeTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /*
  * Two round buttons that float over the page. On wide screens (1280px and up) they sit as a pair on the right edge, in the empty margin
  * beside the page. On narrower screens there is no empty margin, so they sit side by side in the bottom-right corner instead (a pair in the
  * middle of the edge would cover the page's own buttons and tabs), and the picker opens upwards:
- *   1. The rainbow button opens a colour picker. The picked colour restyles the whole site (the rules are in src/lib/theme.ts).
+ *   1. The rainbow button opens a colour picker. The picked colour restyles the whole site (the rules are in src/lib/theme.ts):
+ *      a light or ordinary colour makes a bright page in that colour, a dark colour makes a dark page in that colour.
  *   2. The moon / sun button switches dark mode. While dark is on, the colour wheel is switched off (greyed) and its
  *      colours are removed; the picked colour is remembered for when dark mode is switched off again.
  * The choice is saved in this browser only (localStorage, no cookie, nothing is sent anywhere). A tiny script in <head>
@@ -27,6 +28,9 @@ function applyTheme({ dark, hex }: ThemeChoice) {
   const vars = !dark && hex ? deriveTheme(hex) : null;
   if (dark) root().setAttribute("data-theme", "dark");
   else root().removeAttribute("data-theme");
+  // A dark pick makes a dark page in that colour: mark it so scrollbars and form controls are drawn dark too.
+  if (vars && hex && pickIsDark(hex)) root().setAttribute("data-tone", "dark");
+  else root().removeAttribute("data-tone");
   for (const name of THEME_VARS) {
     if (vars) root().style.setProperty(name, vars[name]);
     else root().style.removeProperty(name);

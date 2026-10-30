@@ -3,7 +3,8 @@
 //
 // How it works: the whole site takes its colours from CSS variables (--ink-primary, --action-primary ...).
 // Picking a colour makes a full set of those variables from ONE colour, with the text colours worked out so they
-// stay readable whatever was picked. Dark mode removes them again and the dark palette in global.css takes over.
+// stay readable whatever was picked. A light pick makes a bright page; a dark pick makes a dark page in that colour.
+// The moon button (dark mode) removes the picked colours again and the dark palette in global.css takes over.
 
 export type Rgb = { r: number; g: number; b: number };
 /** h is 0 to 360, s and v are 0 to 100 (the ranges the colour picker uses). */
@@ -135,13 +136,82 @@ function darkenUntilReadable(h: number, s: number, l: number, against: string[])
   return hex;
 }
 
+// The opposite of the above, for a dark page: the same colour, made lighter a step at a time until it is readable on every colour.
+function lightenUntilReadable(h: number, s: number, l: number, against: string[]): string {
+  let light = l;
+  let hex = hslHex(h, s, light);
+  while (light < 1 && against.some((bg) => contrastRatio(hex, bg) < READABLE)) {
+    light = Math.min(1, light + 0.01);
+    hex = hslHex(h, s, light);
+  }
+  return hex;
+}
+
+// A pick this dark (white text on it would be 10 to 1 or better, a colour like #1a237e or #010411) cannot make a bright page with
+// dark text, so it makes a dark page in that colour instead. Ordinary colours (even deep blue #2b52ff) stay on the bright page.
+const DARK_PICK_MAX_LUMINANCE = 0.055;
+
+/** True if the picked colour is dark enough that the site turns dark in that colour. False for anything that is not a valid colour. */
+export function pickIsDark(hex: string): boolean {
+  const picked = parseHex(hex);
+  return picked !== null && luminance(picked) <= DARK_PICK_MAX_LUMINANCE;
+}
+
+// The palette for a dark pick: the page IS the picked colour, the boxes and borders step up in lightness (same hue), text is light.
+function deriveDarkTheme(picked: Rgb): ThemeVars {
+  const { h, s, l } = rgbToHsl(picked);
+  const colour = Math.min(s, 0.6); // How much hue the lifted surfaces carry (a grey or black pick stays neutral).
+  const lifted = (amount: number, hueShift = 0) => hslHex(h + hueShift, colour, Math.min(1, l + amount));
+  const surfaceBase = toHex(picked);
+  const surfaceRaised = lifted(0.045);
+  const surfaceSunken = lifted(0.02);
+  const surfaceBrandSubtle = hslHex(h, Math.min(s, 0.8), Math.min(1, l + 0.08));
+  // A neighbouring hue (green, say) is brighter to the eye than the pick itself, so each tint is darkened until it is still dark
+  // (white on it at least 8 to 1), which keeps every text colour readable on it.
+  const tint = (hueShift: number) => {
+    let light = Math.min(1, l + 0.05);
+    let hex = hslHex(h + hueShift, colour, light);
+    while (light > 0 && contrastRatio(hex, "#ffffff") < 8) {
+      light = Math.max(0, light - 0.01);
+      hex = hslHex(h + hueShift, colour, light);
+    }
+    return hex;
+  };
+  const tints = [tint(0), tint(35), tint(-35), tint(70)];
+  const surfaces = [surfaceBase, surfaceRaised, surfaceSunken, surfaceBrandSubtle, ...tints];
+  const brandSat = Math.min(s, 0.9);
+  const brand = lightenUntilReadable(h, brandSat, 0.72, surfaces);
+  // Buttons are light with dark writing, the same idea as the moon-button dark mode.
+  const actionSat = Math.min(s, 0.5);
+  return {
+    "--surface-base": surfaceBase,
+    "--surface-raised": surfaceRaised,
+    "--surface-sunken": surfaceSunken,
+    "--surface-brand-subtle": surfaceBrandSubtle,
+    "--border-subtle": lifted(0.14),
+    "--border-strong": lifted(0.23),
+    "--ink-primary": lightenUntilReadable(h, 0.3 * colour, 0.95, surfaces),
+    "--ink-secondary": lightenUntilReadable(h, 0.25 * colour, 0.78, surfaces),
+    "--ink-muted": lightenUntilReadable(h, 0.2 * colour, 0.7, surfaces),
+    "--ink-brand": brand,
+    "--action-primary": hslHex(h, actionSat, 0.94),
+    "--action-primary-hover": hslHex(h, actionSat, 0.86),
+    "--action-primary-ink": hslHex(h, 0.3 * colour, 0.05),
+    "--focus-ring": brand,
+    "--tint-sky": tints[0],
+    "--tint-sand": tints[1],
+    "--tint-sage": tints[2],
+    "--tint-lilac": tints[3],
+  };
+}
+
 /** Makes the whole palette from one picked colour. Returns null if the colour is not a valid hex colour. */
 export function deriveTheme(hex: string): ThemeVars | null {
   const picked = parseHex(hex);
   if (!picked) return null;
+  if (luminance(picked) <= DARK_PICK_MAX_LUMINANCE) return deriveDarkTheme(picked);
   const { h, s, l } = rgbToHsl(picked);
-  // How strongly the pick should tint the page: 0 for a grey, white or very dark pick (the page stays white), up to 1 for a bright,
-  // pure colour. Very dark picks fade out because their "colour" is barely visible (the black swatch must mean "original look").
+  // How strongly the pick should tint the page: 0 for a grey or white pick (the page stays white), up to 1 for a bright, pure colour.
   const pickedHsv = rgbToHsv(picked);
   const vivid = (pickedHsv.s / 100) * Math.min(1, Math.max(0, (pickedHsv.v - 10) / 40));
 
@@ -218,6 +288,8 @@ export function serializeTheme({ dark, hex }: ThemeChoice): string {
     dark,
     hex,
     ...(vars ? { vars } : {}),
+    // "dark" = the picked colour made a dark page (the head script then marks the page, so scrollbars and form controls match).
+    ...(!dark && hex && pickIsDark(hex) ? { tone: "dark" } : {}),
     color: dark ? DARK_BASE : (vars?.["--surface-base"] ?? "#ffffff"),
   });
 }
@@ -241,6 +313,7 @@ export const THEME_BOOT_SCRIPT = `(function () {
         var value = s.vars[known[i]];
         if (typeof value === "string" && plain.test(value)) root.style.setProperty(known[i], value);
       }
+      if (s.tone === "dark") root.setAttribute("data-tone", "dark");
     }
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta && typeof s.color === "string" && plain.test(s.color)) meta.setAttribute("content", s.color);

@@ -15,6 +15,7 @@ import {
   hsvToRgb,
   parseHex,
   parseStored,
+  pickIsDark,
   rgbToHsv,
   serializeTheme,
   toHex,
@@ -147,13 +148,58 @@ test("a grey pick gives a grey page (no stray tint)", () => {
   }
 });
 
-test("the page stays bright and the text stays very dark, whatever is picked", () => {
-  for (const hex of allHexes) {
+test("a light pick gives a bright page with very dark text", () => {
+  for (const hex of allHexes.filter((h) => !pickIsDark(h))) {
     const t = deriveTheme(hex);
     // Brightness measured against black (a blue pastel is perceived as bright even though its ratio to white is a little higher).
     assert.ok(contrastRatio(t["--surface-base"], "#000000") >= 13, `${hex} page too dark: ${t["--surface-base"]}`);
     assert.ok(contrastRatio(t["--ink-primary"], "#000000") < 1.6, `${hex} text too light: ${t["--ink-primary"]}`);
   }
+});
+
+// ---------- a DARK pick makes a dark site in that colour ----------
+
+test("pickIsDark: near-black and deep colours are dark, ordinary colours are not", () => {
+  for (const hex of ["#010411", "#000000", "#0b0d10", "#1a237e", "#0b1f4d", "#202020", "#3b0a0a", "#04201a"]) assert.equal(pickIsDark(hex), true, hex);
+  for (const hex of ["#2b52ff", "#7c3aed", "#db2777", "#e11d48", "#ea580c", "#ca8a04", "#16a34a", "#0d9488", "#0891b2", "#ffffff", "#808080", "#c0c0c0"]) assert.equal(pickIsDark(hex), false, hex);
+  assert.equal(pickIsDark("nonsense"), false);
+});
+
+test("a dark pick becomes the page colour itself, and the page is dark with light text", () => {
+  const t = deriveTheme("#010411");
+  assert.equal(t["--surface-base"], "#010411");
+  const darkOnes = allHexes.filter(pickIsDark);
+  assert.ok(darkOnes.length > 100, "not enough dark picks were tried");
+  for (const hex of darkOnes) {
+    const d = deriveTheme(hex);
+    assert.equal(d["--surface-base"], hex, `${hex}: the page should be the picked colour`);
+    assert.ok(contrastRatio(d["--surface-base"], "#ffffff") >= 10, `${hex}: page not dark`);
+    assert.ok(contrastRatio(d["--ink-primary"], "#ffffff") < 1.6, `${hex}: text not light: ${d["--ink-primary"]}`);
+  }
+});
+
+test("on a dark pick the boxes are a step lighter than the page, the borders lighter still, and the hue is kept", () => {
+  const t = deriveTheme("#010411");
+  const lum = (hex) => contrastRatio(hex, "#000000");
+  assert.ok(lum(t["--surface-raised"]) > lum(t["--surface-sunken"]) && lum(t["--surface-sunken"]) > lum(t["--surface-base"]), "raised > sunken > page");
+  assert.ok(lum(t["--border-subtle"]) > lum(t["--surface-raised"]), "borders lighter than boxes");
+  assert.ok(lum(t["--border-strong"]) > lum(t["--border-subtle"]), "strong border lighter than subtle");
+  const h = rgbToHsv(parseHex(t["--surface-raised"]));
+  assert.ok(h.h > 200 && h.h < 245, `boxes should stay blue, hue ${h.h}`);
+  const grey = deriveTheme("#0b0d10");
+  assert.equal(grey["--surface-base"], "#0b0d10");
+});
+
+test("a dark grey or black pick gives a neutral dark site (no stray colour)", () => {
+  const t = deriveTheme("#000000");
+  for (const name of ["--surface-base", "--surface-raised", "--surface-sunken", "--ink-primary", "--action-primary", "--ink-brand"]) {
+    const { r, g, b } = parseHex(t[name]);
+    assert.ok(Math.max(r, g, b) - Math.min(r, g, b) <= 2, `${name} = ${t[name]}`);
+  }
+});
+
+test("a light pick is never treated as dark: the page stays light", () => {
+  for (const hex of ["#2b52ff", "#7c3aed", "#db2777"]) assert.equal(contrastRatio(deriveTheme(hex)["--surface-base"], "#000000") >= 13, true, hex);
 });
 
 // How far a colour is from white: the biggest gap in any one of red, green, blue.
@@ -163,7 +209,7 @@ test("a colourful pick really changes the page colour, the boxes and the borders
   const checked = [];
   for (const hex of randomHexes) {
     const picked = rgbToHsv(parseHex(hex));
-    if (picked.s < 50 || picked.v < 40) continue;
+    if (picked.s < 50 || picked.v < 40 || pickIsDark(hex)) continue;
     const t = deriveTheme(hex);
     checked.push(hex);
     assert.ok(awayFromWhite(t["--surface-base"]) >= 12, `${hex}: page ${t["--surface-base"]} looks white`);
@@ -180,8 +226,8 @@ test("the page tint gets stronger the more colourful the pick is", () => {
   assert.ok(strength("#c98a9a") > strength("#999999"));
 });
 
-test("a white, grey or black pick keeps the original white page", () => {
-  for (const hex of ["#ffffff", "#808080", "#000000", "#0b0d10"]) {
+test("a white or mid-grey pick keeps the original white page", () => {
+  for (const hex of ["#ffffff", "#808080", "#c0c0c0"]) {
     assert.equal(deriveTheme(hex)["--surface-base"], "#ffffff", hex);
     assert.equal(deriveTheme(hex)["--surface-raised"], "#ffffff", hex);
   }
@@ -217,6 +263,12 @@ test("serializeTheme remembers the picked colour while dark mode is on", () => {
   assert.equal(saved.dark, true);
   assert.equal(saved.hex, "#2b52ff");
   assert.equal(saved.color, DARK_BASE);
+});
+
+test("serializeTheme saves whether the palette is dark, so the head script can set it before the page draws", () => {
+  assert.equal(JSON.parse(serializeTheme({ dark: false, hex: "#010411" })).tone, "dark");
+  assert.equal(JSON.parse(serializeTheme({ dark: false, hex: "#2b52ff" })).tone, undefined);
+  assert.equal(JSON.parse(serializeTheme({ dark: true, hex: "#010411" })).tone, undefined, "the dark switch wins");
 });
 
 test("serializeTheme with no colour and light mode saves no palette", () => {
@@ -256,8 +308,16 @@ test("boot script with nothing saved changes nothing", () => {
 test("boot script applies a saved colour palette and the browser-bar colour", () => {
   const { set, attrs, meta } = runBoot({ stored: serializeTheme({ dark: false, hex: "#e91e63" }) });
   assert.deepEqual(set, deriveTheme("#e91e63"));
-  assert.deepEqual(attrs, {});
+  assert.deepEqual(attrs, {}, "a light palette sets no attribute");
   assert.equal(meta.content, set["--surface-base"]);
+});
+
+test("boot script applies a dark palette and marks the page as dark-toned (for scrollbars and form controls)", () => {
+  const { set, attrs, meta } = runBoot({ stored: serializeTheme({ dark: false, hex: "#010411" }) });
+  assert.deepEqual(set, deriveTheme("#010411"));
+  assert.equal(attrs["data-tone"], "dark");
+  assert.equal(attrs["data-theme"], undefined);
+  assert.equal(meta.content, "#010411");
 });
 
 test("boot script in dark mode sets dark and applies no colours", () => {
@@ -359,6 +419,18 @@ test("the X button, category cards and sign-in cards keep their own colours (the
   const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
   assert.match(read("../components/ui/stacked-sections.tsx"), /<section[^>]*data-keep-palette/);
   assert.match(read("../components/auth/AuthShowcase.astro"), /<aside[^>]*data-keep-palette/);
+});
+
+test("a dark-toned page (dark pick) tells the browser to draw scrollbars and form controls dark, and the dock sets that marker", () => {
+  assert.match(css, /html\[data-tone="dark"\]\s*\{[^}]*color-scheme:\s*dark/);
+  const dock = readFileSync(new URL("../components/ThemeDock.tsx", import.meta.url), "utf8");
+  assert.match(dock, /data-tone/);
+  assert.match(dock, /pickIsDark/);
+});
+
+test("on a dark pick the category cards and sign-in cards take the dark look (like the moon button), instead of glowing bright on a dark page", () => {
+  const darkSelector = selectorOf("--surface-base: #0d0f13");
+  assert.match(darkSelector, /html\[data-tone="dark"\] \[data-keep-palette\]/);
 });
 
 test("the mini screens in the category pictures stay light in dark mode (they are white cards with dark bars)", () => {
