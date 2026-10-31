@@ -8,7 +8,16 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
-## Colour wheel and dark mode (2026-10-30, newest, D30)
+## Average rating circle and feedback panel (2026-10-31, newest, D33)
+Each row shows the average of all users' ratings in a small circle ("4.5 /5", "–" while nobody has rated) left of the star rating, and the hover box has a "See user feedback" button that slides a panel in from the right (average, bars per star, one card per feedback). The real list has no feedback, so the live site shows the empty state; only localhost demo rows have clearly labelled made-up feedback. Nothing saved or sent (no accounts). Not pushed: D31, D32 and D33 are all still local.
+
+## Speed pass (2026-10-31, D32)
+The site felt laggy, so it was measured and three causes were fixed with no change to look or function: rows draw one star until hovered or focused (plus `memo` on rows), the sign-in typing bar animates on the graphics chip instead of re-laying-out the page, and colour changes use the browser's View Transition cross-fade instead of a transition on every element. List DOM 2,820 to 1,028 nodes; sign-in idle CPU 23.7% to 0.1%. No debug leftovers were found. Not pushed yet (the working tree also holds D31).
+
+## Website rows, star rating, review, bookmarks (2026-10-31, D31)
+Each list row turns into a box on hover and opens the description and "the catch" inside it (it grows only as much as the text needs); the right side has Review, bookmark and a one-star rating that grows to five (Wensity `star-rating`, audited). Accounts are not open, so these only ask for a sign-in and save nothing; a sidebar Bookmarks item shows the sign-in message. Built on localhost only at the time of writing: NOT pushed (the owner asked to see it on localhost first).
+
+## Colour wheel and dark mode (2026-10-30, D30)
 A rainbow button opens the supplied picker and one colour restyles the WHOLE page (background, boxes, borders, text, buttons) on the home and list pages (the sign-in page follows the saved choice); the X button, the category cards and the sign-in cards are shielded and keep their own colours (`data-keep-palette`); a moon/sun button switches a smooth dark mode and greys the wheel. Choice saved in this browser only, applied by a head script before the page draws. Rules and tests in `src/lib/theme.ts` / `theme.test.mjs`; dark palette in `global.css`. Backup before the work: `site-library-BACKUP-2026-10-30-before-colour-wheel` (next to the project). Not pushed. Open: licence of the picker (owner to verify), Content-Security-Policy will need the script's hash later.
 
 ## All four categories, type filter and header search (2026-10-30, D28)

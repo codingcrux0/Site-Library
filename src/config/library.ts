@@ -8,6 +8,8 @@
 // `testedOn` is a date written year-month-day. `category` must match a name in src/config/categories.ts.
 // `tags` are the "type of website" words for the filter and search. Pick 2 to 4 from src/config/tags.ts (npm test checks they exist).
 
+import type { Feedback } from "@/lib/ratings";
+
 export type Entry = {
   id: string;
   name: string;
@@ -21,6 +23,8 @@ export type Entry = {
   category: string;
   /** Types of website, from src/config/tags.ts (for example "React", "CSS", "Java"). */
   tags: string[];
+  /** What users wrote and rated. Left out until accounts are open (the legal gate); only the localhost demo rows have any. */
+  feedback?: Feedback[];
   /** Only the localhost demo rows set this. Real entries never do. */
   preview?: boolean;
 };

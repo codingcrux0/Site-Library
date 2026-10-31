@@ -433,6 +433,14 @@ test("on a dark pick the category cards and sign-in cards take the dark look (li
   assert.match(darkSelector, /html\[data-tone="dark"\] \[data-keep-palette\]/);
 });
 
+test("the colour change fades the whole page in one go, not every element one by one (that stalled the list page)", () => {
+  const dock = readFileSync(new URL("../components/ThemeDock.tsx", import.meta.url), "utf8");
+  assert.match(dock, /startViewTransition/, "ThemeDock should use the browser's page cross-fade");
+  assert.match(dock, /prefers-reduced-motion/, "and skip it for people who asked for less motion");
+  assert.doesNotMatch(css, /theme-fade/, "the blanket per-element transition must be gone from global.css");
+  assert.doesNotMatch(dock, /theme-fade/);
+});
+
 test("the mini screens in the category pictures stay light in dark mode (they are white cards with dark bars)", () => {
   // Their bars and cards are drawn for a light page. If dark mode flipped the text colour to light, white labels would sit on white cards.
   const lightSelector = selectorOf("--surface-base: #ffffff");

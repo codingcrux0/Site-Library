@@ -410,3 +410,41 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 | `npm run check` | 0 errors, 0 warnings, 0 hints |
 | Real browser, 1440 px, `#010411`, `#0b1f4d`, `#04201a`, `#db2777` | typed in the picker's hex box: page rgb(1,4,17), `data-tone=dark`, scrollbar scheme dark; saved with tone; reload keeps it on home, list, sign-in; moon button wins then returns to the pick; Reset clears storage and the page is white. Text contrast on home: min 8.64, 9.15, 8.62 (dark picks) and 4.71 (pink, unchanged). Category cards: dark look on dark picks; unchanged light palette on pink. X chip colour unchanged in all four. Console clean. Screenshots read by eye (home, list, crowd, cards). |
 | Not tested | a real phone, Safari, Firefox; the live site (not pushed yet); the list-page contrast tool reads the active tab pill as 1.01 (the known tool artifact, the screenshot shows dark text on a light pill) |
+
+## 2026-10-31 — website rows: hover box, star rating, review, bookmarks (D31)
+
+| Check | Result |
+|---|---|
+| Installer first | `wensity@0.1.14` read from the npm tarball (only talks to ui.wensity.com), run with `--dry-run` then `--no-install` in a scratch folder: writes ONE file. The file was read in full: no network, storage, tracking or watermark. |
+| `npm test` | 86 of 86 pass (was 82). New, written first and watched failing: component self-contained (imports only React and `cn`, no network or storage); `dark:` follows the site's switch; the row actions save and send nothing, say "Accounts are not open yet.", link to `/sign-in`, rating fixed at 0; Bookmarks item present. |
+| `npm run check` | 0 errors, 0 warnings, 0 hints |
+| Build, audit, secrets | 3 pages built, no warnings; `npm audit` 0 vulnerabilities; gitleaks no leaks; `package.json` and the lock file unchanged (no dependency added) |
+| Real browser, 1440 px | rest: only name, types, buttons, score and date (description opacity 0, pointer-events none); hover: the row becomes a box and opens its description and catch inside it: 135 px at rest, 174 px open for a one-line description, 197 px for a long catch (grows only as needed), the rows below move down by that amount; a pointer sweep down and up the list changed the hovered row 3 and 4 times (no flicker); star pill 36 px at rest, 124 px hovered; 3-star preview shows 3 gold stars while `aria-valuenow` stays 0; click on a star, Review and bookmark each open the right prompt; Escape and an outside click close it; Sign in link is `/sign-in`; localStorage keys: none; Bookmarks view shows the sign-in message, tabs hidden, category click and All sites bring the list back; search, page 2 and the My lists tab still work. |
+| Keyboard | Tab reaches Review, the bookmark, then the star ("Rate Example website 1"); focus opens the box and the five stars; an arrow key opens the prompt; Escape closes it |
+| Other looks | dark (moon), dark pick `#010411`, pink pick, and a computer set to dark with a bright site: all draw correctly; reduced motion: no errors. 390 px with touch emulation (no hover): description and catch stay in the row, no sideways overflow |
+| Page size (gzip, includes the shared inlined stylesheet) | list 20.6 KB (was 19.3), home 23.8 (was 22.4), sign-in 20.8 (was 19.5): about +1.3 KB each from new style rules; list script chunk 14.0 KB |
+| Not tested | a real phone, Safari, Firefox, a screen reader; the live site (not pushed, the owner asked for localhost first); the list page contrast tool reads the active tab pill as about 1.0 (the known tool artifact) |
+
+
+## 2026-10-31 — speed pass and breakage sweep (D32)
+
+| Check | Result |
+|---|---|
+| `npm test` | 87 of 87 pass (was 86). New, written first: the colour change uses the View Transition (with the reduced-motion check) and no `theme-fade` class is left. |
+| `npm run check` / build / audit / secrets | 0 errors, 0 warnings, 0 hints; 3 pages built; `npm audit` 0 vulnerabilities; gitleaks no leaks (history and files); `.env` ignored and not tracked; no dependency added |
+| Debug leftovers | search for `console.*`, `debugger`, TODO, FIXME in `src`, `worker`, `public`: none |
+| Before and after (headless Chrome, dev server) | list page DOM nodes 2,820 to 1,028; paths 1,822 to 414; memory 27.9 to 16 MB; sign-in idle CPU 23.7% to 0.1%; dark switch on the list at 4x slowdown: stalls [129,121,126,131,175 ms] to none |
+| Breakage sweep (real browser) | home, list, sign-in: no sideways overflow; search "react" gives 6 rows; page 2 works; My lists tab placeholder intact; Bookmarks view hides the tabs and category/All sites bring the list back; stars: 1 per row at rest, 5 on the hovered row only, back to 1 after leaving, `aria-valuetext` "0 out of 5 stars"; colour typed in the picker applies, saved, kept on reload, moon switch and Reset work; dark-pick page rgb(1,4,17); home contrast min 5.78; 38 text items checked on a dark pick, min 9.15; console clean |
+| Not tested | a real phone, Safari, Firefox, a screen reader, the live site for D31 and D32 (not pushed yet); the contrast tool reads the active "All sites" pill as 1.06 (known tool artifact: it reads the pale track instead of the black pill behind the text) |
+
+## 2026-10-31 — average rating circle and feedback panel (D33)
+
+| Check | Result |
+|---|---|
+| `npm test` | 93 of 93 pass (was 87). New, written first and watched failing (module missing): average maths (empty gives null, rounding 4.67 to 4.7, per-star counts, bad values ignored); the panel saves and sends nothing, says accounts are not open, has the sign-in link, `role="dialog"`, `aria-modal`, Escape; the real list stays empty and the demo feedback is labelled made up. |
+| `npm run check` / build / audit / secrets | 0 errors, 0 warnings, 0 hints; 3 pages built; `npm audit` 0 vulnerabilities; gitleaks no leaks; `.env` not tracked; no dependency added |
+| Demo data not shipped | "Example reader" and "made up to show" appear 0 times in the built home and list pages |
+| Real browser, 1440 px | circle reads "5.0 /5" with a full label; empty row reads "no ratings yet"; the button says "See user feedback (1)"; panel is 448 px wide at the right edge, focus lands on Close, page scroll locked; 8 Tab presses never left the panel; "Write a review" shows the sign-in prompt; Escape closes it, unlocks the page and puts focus back on the button; a click on the dim area closes it; the empty state shows for a website with no feedback. Screenshots read by eye in bright and dark. |
+| Phone (390 px, touch, no hover) | description, catch, feedback button and the circle all stay visible in the row; panel fills the width; no sideways overflow |
+| Speed after adding it (4x CPU, list page) | no long tasks in colour drag, dark switch or hover sweep (worst frame 83 ms); stars still 1 per row at rest, 5 on the hovered row |
+| Not tested | a real phone, Safari, Firefox, a screen reader; the live site (not pushed yet) |

@@ -280,11 +280,16 @@
     height: 3.6cqw;
     color: var(--ink-muted);
   }
+  /* The typing bar. It used to grow by changing its width, which makes the browser redo the layout on every step (the one animation on the
+     page that cost real work). Now the bar never changes: a white cover (::before) slides off it to the right, which shows the bar a bit
+     at a time, and the cursor (::after) rides along on the cover's edge. Only transform and opacity change, so the graphics chip does it.
+     overflow:hidden keeps the cover and cursor inside this box. The resting (finished) look is the cover slid fully off, the cursor at the end. */
   .sc-typed {
     display: flex;
     flex: 1;
     align-items: center;
     height: 4cqw;
+    overflow: hidden;
   }
   .sc-type {
     position: relative;
@@ -293,15 +298,22 @@
     border-radius: 1.2cqw;
     background: rgba(11, 13, 16, 0.55);
   }
-  /* The blinking cursor sits at the end of the typed bar and moves with it. */
+  /* A little bigger than the bar on three sides, so the bar's soft edge never shows around it. */
+  .sc-type::before {
+    content: "";
+    position: absolute;
+    inset: -0.4cqw 0 -0.4cqw -0.4cqw;
+    background: #fff;
+    transform: translateX(100%);
+  }
+  /* The cursor: a box as wide as the bar that moves together with the cover. The cursor itself is a stripe along the box's left edge. At rest the box
+     sits 0.9cqw in from the bar's left edge, so after sliding one bar-width the cursor is 0.9cqw past the bar's end (where it always was). */
   .sc-type::after {
     content: "";
     position: absolute;
-    top: -0.8cqw;
-    right: -1.4cqw;
-    width: 0.5cqw;
-    height: 4cqw;
-    background: var(--ink-primary);
+    inset: -0.8cqw -0.9cqw -0.8cqw 0.9cqw;
+    box-shadow: inset 0.5cqw 0 0 var(--ink-primary); /* a stripe of exactly 0.5cqw (a border would snap to whole pixels and look thinner) */
+    transform: translateX(100%);
   }
   .sc-kbd {
     padding: 0.8cqw 1.8cqw;
@@ -593,8 +605,13 @@
     .sc-type {
       animation: sc-typing 8s linear infinite var(--sc-state, running);
     }
+    .sc-type::before {
+      animation: sc-reveal 8s linear infinite var(--sc-state, running);
+    }
     .sc-type::after {
-      animation: sc-blink 1s steps(1) infinite var(--sc-state, running);
+      animation:
+        sc-reveal 8s linear infinite var(--sc-state, running),
+        sc-blink 1s steps(1) infinite var(--sc-state, running);
     }
     .sc-move {
       animation: sc-move 8s var(--sc-ease) infinite var(--sc-state, running);
@@ -722,24 +739,29 @@
       }
     }
     /* "Typing" in 10 jumps, like keystrokes. This is the one animation that changes width. */
+    /* The bar fades out at the end of the loop. */
     @keyframes sc-typing {
-      0% {
-        width: 0;
-        opacity: 1;
-      }
-      6% {
-        width: 0;
-        animation-timing-function: steps(10, end);
-      }
-      34%,
+      0%,
       88% {
-        width: 62%;
         opacity: 1;
       }
       96%,
       100% {
-        width: 62%;
         opacity: 0;
+      }
+    }
+    /* Ten steps: the cover (and the cursor) jump along 10 times, like keys being pressed. Then it waits, and the loop starts over. */
+    @keyframes sc-reveal {
+      0% {
+        transform: translateX(0);
+      }
+      6% {
+        transform: translateX(0);
+        animation-timing-function: steps(10, end);
+      }
+      34%,
+      100% {
+        transform: translateX(100%);
       }
     }
     @keyframes sc-blink {

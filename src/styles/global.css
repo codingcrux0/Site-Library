@@ -3,6 +3,10 @@
 @import "./reveal.css";
 @import "./scenes.css";
 
+/* Tailwind's dark: classes (used by the Wensity star rating) follow THIS site's dark switch (the moon button) and a dark colour picked on
+   the colour wheel, not the computer's own dark setting. Without this the stars would draw their dark styles on a bright page. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-tone="dark"], [data-tone="dark"] *));
+
 /* ---------- Design tokens (from the provided component kit) ---------- */
 :root {
   --space-2: 8px;
@@ -146,19 +150,11 @@ html[data-tone="dark"] {
   }
 }
 
-/* A short fade for colours only while the colour wheel or the dark switch is used. The class is added by ThemeDock for
-   about half a second and then removed, so it never slows the page's own hover effects. Skipped for reduced motion. */
+/* The colour wheel's single jumps and the dark switch fade the whole page (see crossfade() in ThemeDock.tsx): the browser fades between
+   two pictures of the page for this long. (Only runs where the browser has it, and never for reduced motion.) */
 @media (prefers-reduced-motion: no-preference) {
-  html.theme-fade,
-  html.theme-fade *,
-  html.theme-fade *::before,
-  html.theme-fade *::after {
-    transition:
-      background-color 0.35s ease,
-      border-color 0.35s ease,
-      color 0.35s ease,
-      fill 0.35s ease,
-      stroke 0.35s ease,
-      outline-color 0.35s ease;
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.3s;
   }
 }

@@ -38,6 +38,15 @@ function applyTheme({ dark, hex }: ThemeChoice) {
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? DARK_BASE : (vars?.["--surface-base"] ?? "#ffffff"));
 }
 
+// A short cross-fade of the whole page. The browser takes a picture of the page before and after and fades between the two, which is
+// cheap. (The old way faded the colours of every element one by one: on the list page that was about a thousand small animations per
+// frame and the page stalled.) Browsers without it, and people who asked for less motion, simply get the change at once.
+function crossfade(change: () => void) {
+  const start = (document as Document & { startViewTransition?: (callback: () => void) => unknown }).startViewTransition;
+  if (typeof start === "function" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) start.call(document, change);
+  else change();
+}
+
 function save(choice: ThemeChoice) {
   try {
     if (!choice.dark && !choice.hex) localStorage.removeItem(STORAGE_KEY);
@@ -58,7 +67,6 @@ export function ThemeDock() {
   const rootRef = useRef<HTMLDivElement>(null);
   const colourButton = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const fadeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const noteTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const panelId = useId();
@@ -75,23 +83,16 @@ export function ThemeDock() {
     applyTheme(saved); // Also refreshes a palette that an older version of the rules made.
     setReady(true);
     return () => {
-      clearTimeout(fadeTimer.current);
       clearTimeout(saveTimer.current);
       clearTimeout(noteTimer.current);
     };
   }, []);
 
-  // A short colour fade for single jumps (dark switch, preset, typed colour). Dragging is already smooth, so it gets none.
-  const fade = () => {
-    root().classList.add("theme-fade");
-    clearTimeout(fadeTimer.current);
-    fadeTimer.current = setTimeout(() => root().classList.remove("theme-fade"), 500);
-  };
-
   const update = (next: ThemeChoice, source: ChangeSource) => {
-    if (source === "pick") fade();
     setChoice(next);
-    applyTheme(next);
+    // A single jump (dark switch, preset, typed colour) fades; a drag changes many times a second, so it applies at once.
+    if (source === "pick") crossfade(() => applyTheme(next));
+    else applyTheme(next);
     // A drag sends many changes a second, so saving waits until it pauses; a single jump saves at once.
     clearTimeout(saveTimer.current);
     if (source === "pick") save(next);
