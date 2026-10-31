@@ -484,6 +484,62 @@ export const ENTRIES: Entry[] = [
       },
     ],
   },
+  {
+    id: "astryx",
+    name: "Astryx",
+    url: "https://astryx.atmeta.com",
+    summary: "An open-source React design system from Meta with 180+ components, themes, page templates and command-line and MCP tools.",
+    theCatch: "It is still in beta (version 0.7.0 on 12 October 2026), it needs React 19 and the StyleX styling system, and the page shows no install commands, only links to its guide.",
+    checkedOn: DAY,
+    placements: [
+      {
+        category: "UI Components",
+        tags: ["React", "Accessibility", "Open source", "Command line"],
+        marks: [4, 5, 3, 5],
+        score: 17,
+        free: { marks: [4, 5, 5, 5], score: 19 },
+      },
+    ],
+  },
+  {
+    id: "boardui",
+    name: "BoardUI",
+    url: "https://boardui.com",
+    summary: "A React design system for dashboards and agentic (AI agent) interfaces, with 103 components including 19 charts, added to your project with one command.",
+    theCatch: "Only the free components are in the MIT repository; the Pro charts and templates cost €149 for a year of updates or €199 once, and it needs React 19.2 and Tailwind CSS 4.",
+    checkedOn: DAY,
+    placements: [
+      {
+        category: "UI Components",
+        tags: ["React", "Tailwind CSS", "Dashboards", "Charts", "AI interfaces"],
+        marks: [4, 4, 4, 5],
+        score: 17,
+      },
+    ],
+  },
+  {
+    id: "reverseui",
+    name: "Reverse UI",
+    url: "https://reverseui.com",
+    summary: "68 animated React components, such as a radial menu, a dock and a text-scramble effect, each shown with the month it was released.",
+    theCatch: "Only 19 of the 68 components are free (with source code and commercial use); the full set is $39 once, and the page states no licence terms beyond commercial use.",
+    checkedOn: DAY,
+    placements: [
+      {
+        category: "UI Components",
+        tags: ["React", "Animation", "Copy and paste"],
+        marks: [3, 4, 4, 4],
+        score: 15,
+      },
+      {
+        category: "Motion & Animation",
+        tags: ["Animated components", "Text effects"],
+        marks: [4, 4, 4, 4],
+        score: 16,
+        summary: "68 animated components (menus, docks, shaders and text effects) to copy into a React project, each dated by release month.",
+      },
+    ],
+  },
   // ---- Motion & Animation ----
   {
     id: "60fps",
@@ -1181,6 +1237,22 @@ export const ENTRIES: Entry[] = [
         score: 17,
         summary: "Icon packages you add with one command for React, Vue, Svelte, Astro and React Native; its FAQ says each icon is tree-shakeable.",
         free: { marks: [3, 5, 4, 5], score: 17 },
+      },
+    ],
+  },
+  {
+    id: "pryzm",
+    name: "Pryzm",
+    url: "https://pryzm.design",
+    summary: "A browser studio for making gradient, glass and grain backgrounds and seamless animated loops with WebGL, with a gallery of looks to start from.",
+    theCatch: "Exporting needs a free account, free video is small and watermarked, and clean or larger exports need Pro at $9 a month; you may not resell exports as stock.",
+    checkedOn: DAY,
+    placements: [
+      {
+        category: "Templates & Assets",
+        tags: ["Backgrounds", "Gradients", "WebGL"],
+        marks: [3, 3, 5, 5],
+        score: 16,
       },
     ],
   },

@@ -500,3 +500,8 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 - 131 of 131 pass, type check 0 errors, build OK. Browser on the built site: home shows 7 boxes, "Now listing 70" and the counts 24, 14, 7, 10, 12, 10, 11; the list shows 70 sites; Best for free shows 30 (shadcn/ui first at 20); Top scored starts with Excalidraw; searching "penpot" finds it; 0 policy violations, 0 console problems.
 - Page size gzipped: home 26.2 KB, list 40.1 KB (was 37.8 KB for 13 fewer sites), list script 18.0 KB.
 - Not tested: a real phone, Safari, Firefox; whether each catch matches its site next month.
+
+## 2026-10-31 — four more websites (D39)
+- The existing data guards were the check (marks add up, free score exists exactly when the free-tier mark is 5, tags, wording, no duplicate ids or addresses). They did not fail first this time because every tag already existed; no new test was written. The diff adds 72 lines and removes none.
+- 131 of 131 pass, type check 0 errors, build OK. Browser on the built site: home "Now listing 74", box counts 27, 15, 7, 10, 12, 11, 11; list 74 sites; Best for free 31; searching "astryx" finds it; 0 policy violations, 0 console problems. Page size gzipped: list 40.8 KB.
+- Not tested: a real phone, Safari, Firefox.
