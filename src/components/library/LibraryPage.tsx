@@ -75,6 +75,21 @@ export default function LibraryPage({ entries, categories }: Props) {
   // The header's empty spot only exists in the page, so it is looked up after the island starts (the server HTML has no box yet).
   useEffect(() => setSearchSlot(document.getElementById("header-search")), []);
 
+  // Only one row is open at a time. A row also stays open while something inside it has the focus (that is what keeps it open for someone
+  // using the keyboard), and a mouse click leaves the focus on the button that was clicked. So when the pointer MOVES onto a different row,
+  // the focus lets go of the old row, which then closes. ("Moves": a row that closes and shifts the page under a resting pointer must not
+  // steal the keyboard's place.) The sign-in prompt closes itself the same way, in EntryActions.tsx.
+  useEffect(() => {
+    const onMove = (event: PointerEvent) => {
+      const held = document.activeElement?.closest("[data-row]");
+      if (!held) return;
+      const row = (event.target as Element).closest("[data-row]");
+      if (row && row !== held) (document.activeElement as HTMLElement).blur();
+    };
+    document.addEventListener("pointermove", onMove, { passive: true });
+    return () => document.removeEventListener("pointermove", onMove);
+  }, []);
+
   // Typing updates the box at once; the (heavier) list catches up a moment later, so the keys never lag.
   const deferredQuery = useDeferredValue(query);
 
@@ -446,6 +461,7 @@ const EntryRow = memo(function EntryRow({
   return (
     // z-20 while open, so the box's shadow sits over the neighbouring rows.
     <li
+      data-row
       className={cn("group/row relative focus-within:z-20 hover:z-20 has-[[data-nudge]]:z-20", dropAt !== undefined && "drop")}
       style={dropAt !== undefined ? at(dropAt) : undefined}
     >

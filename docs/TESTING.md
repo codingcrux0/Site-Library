@@ -505,3 +505,10 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 - The existing data guards were the check (marks add up, free score exists exactly when the free-tier mark is 5, tags, wording, no duplicate ids or addresses). They did not fail first this time because every tag already existed; no new test was written. The diff adds 72 lines and removes none.
 - 131 of 131 pass, type check 0 errors, build OK. Browser on the built site: home "Now listing 74", box counts 27, 15, 7, 10, 12, 11, 11; list 74 sites; Best for free 31; searching "astryx" finds it; 0 policy violations, 0 console problems. Page size gzipped: list 40.8 KB.
 - Not tested: a real phone, Safari, Firefox.
+
+## 2026-10-31 — only one row open at a time (D40)
+- No component test setup exists (and a new test library was not approved), so the check is a throwaway real-Chrome script (real mouse and keyboard events on the built site). Before the fix it FAILED in all three cases: after clicking Review, after clicking Bookmark, and after opening and closing "See user feedback" in row 1, then moving to row 2, the open rows read `[1,1,0]`. After the fix all three read `[0,1,0]`. Plain hovering from row 1 to row 2 gave `[0,1,0,0]` before and after.
+- Keyboard checks after the fix: Tab into row 1 opens it (`[1,0,0]`); opening and closing the feedback box by keyboard puts the focus back on its button and row 1 stays open; moving the pointer inside row 1 changes nothing; moving it onto row 2 closes row 1 and opens row 2.
+- First attempt used `pointerover`, which also fires when the page shifts under a resting pointer; it blurred the focus the feedback box had just handed back. Switched to `pointermove` and re-ran: fixed.
+- 131 of 131 tests pass, type check 0 errors, build OK, gitleaks clean, `.env` not tracked.
+- Not tested: a real phone (touch has no hover), Safari, Firefox, a screen reader.

@@ -53,19 +53,25 @@ function EntryActionsInner({ name, average, count }: { name: string; average: nu
     }, 450);
   };
 
-  // While the prompt is open: Escape or a click elsewhere closes it.
+  // While the prompt is open: Escape, a click elsewhere, or the pointer moving onto a different row closes it (only one row stays open).
   useEffect(() => {
     if (!ask) return;
     const outside = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setAsk(null);
     };
+    const otherRow = (event: PointerEvent) => {
+      const row = (event.target as Element).closest("[data-row]");
+      if (row && row !== rootRef.current?.closest("[data-row]")) setAsk(null);
+    };
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setAsk(null);
     };
     document.addEventListener("pointerdown", outside);
+    document.addEventListener("pointermove", otherRow);
     document.addEventListener("keydown", escape);
     return () => {
       document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("pointermove", otherRow);
       document.removeEventListener("keydown", escape);
     };
   }, [ask]);
