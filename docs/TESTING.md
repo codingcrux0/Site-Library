@@ -494,3 +494,9 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 - Real browser (Chrome, built site, policy active): home, list and sign-in loaded with 0 blocked resources and 0 console problems; 7 home boxes, 45 list rows, tab switch and dark mode worked. An injected inline script did not run; an outside script and an outside image were refused (3 violations reported).
 - Flood test against the real worker with its real Durable Object, run on this computer (`wrangler dev`): 3,000 counter reads and 2,000 page loads all 200; 500 browser-like POSTs in a burst raised the counter by exactly 10 (the brake); 200 robot POSTs counted 0; cross-site POST 403; DELETE 405; unknown API path 404; a 2 MB body and an 8 KB query string did not crash it. Headers confirmed on pages and on the API.
 - Not tested: a flood against the live site (it would use the free daily allowance), Cloudflare's own protection, Safari and Firefox.
+
+## 2026-10-31 — 13 more websites (D38)
+- The existing data guards were the tests: they failed first because the new entries used two tags that did not exist ("Design tools" is not in tags.ts), then passed after the tags were added. They cover marks that add up, the free score existing exactly when the free-tier mark is 5, tags, wording, no duplicate ids or addresses. No new test file was needed; I did not invent one.
+- 131 of 131 pass, type check 0 errors, build OK. Browser on the built site: home shows 7 boxes, "Now listing 70" and the counts 24, 14, 7, 10, 12, 10, 11; the list shows 70 sites; Best for free shows 30 (shadcn/ui first at 20); Top scored starts with Excalidraw; searching "penpot" finds it; 0 policy violations, 0 console problems.
+- Page size gzipped: home 26.2 KB, list 40.1 KB (was 37.8 KB for 13 fewer sites), list script 18.0 KB.
+- Not tested: a real phone, Safari, Firefox; whether each catch matches its site next month.

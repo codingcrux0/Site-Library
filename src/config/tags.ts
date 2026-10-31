@@ -48,7 +48,7 @@ export const TAG_GROUPS: TagGroup[] = [
     category: "Tools & Utilities",
     tags: [
       "Image editing", "Image generation", "PDF", "Documents", "Dictation", "Mac", "Directories", "Website builders", "Online tools",
-      "No sign-up",
+      "No sign-up", "Design tools", "Whiteboards",
     ],
   },
 ];

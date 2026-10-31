@@ -8,7 +8,10 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
-## Security hardening (2026-10-31, newest, D37)
+## 13 more websites (2026-10-31, newest, D38)
+The list now has 70 websites and 88 placements (UI 24, Motion 14, 3D 7, Video & Audio 10, Design Inspiration 12, Templates & Assets 10, Tools 11). The 13 new ones were found on isthereanytool.app, then read and graded here by `docs/GRADING.md` (D38 has the method and the limits). Best for free shows 30. Open: the owner's yes or no on re-scoring Best for free by what free users can do and how much better each site is than its free rivals.
+
+## Security hardening (2026-10-31, D37)
 A Content Security Policy now ships in every page (scripts limited to this site's own and fingerprinted inline ones), plus HSTS, COOP and frame-ancestors headers, robots.txt and a sitemap. Tested in a real browser and with a local flood against the real worker. See D37 for the honest limits. D34 to D37 were pushed live together.
 
 ## One grading system, 57 websites, seven categories, drop-in entrance (2026-10-31, D36)
