@@ -44,6 +44,7 @@ const COMMON_HEADERS = {
   "x-content-type-options": "nosniff",
   "x-frame-options": "SAMEORIGIN",
   "referrer-policy": "strict-origin-when-cross-origin",
+  "strict-transport-security": "max-age=31536000",
 };
 
 function json(body, status = 200, extra = {}) {

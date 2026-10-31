@@ -17,6 +17,23 @@ export default defineConfig({
 	// Put the (small) stylesheet inside each page instead of a separate file: the browser will not start the page's scripts until a
 	// stylesheet has downloaded, so on a slow connection that one file delayed everything behind it.
 	build: { inlineStylesheets: 'always' },
+	// Content Security Policy: the browser runs ONLY this site's own scripts (Astro lists a fingerprint of each inline script in a <meta> tag
+	// at build time), so a script injected by someone else would be refused. Styles allow inline, because the pages use style="..." for the
+	// drop-in delays; that is much lower risk than scripts. Everything else may only come from this site itself (no outside fonts, trackers
+	// or images). frame-ancestors cannot go in a <meta> tag, so it is in public/_headers.
+	security: {
+		csp: {
+			directives: [
+				"default-src 'self'",
+				"img-src 'self' data:",
+				"connect-src 'self'",
+				"object-src 'none'",
+				"base-uri 'self'",
+				"form-action 'self'",
+			],
+			styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
+		},
+	},
 	vite: {
 		plugins: [tailwindcss()],
 	},

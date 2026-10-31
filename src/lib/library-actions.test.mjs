@@ -54,10 +54,65 @@ test("the feedback panel only reads: it saves and sends nothing, and says accoun
   assert.match(source, /Escape/);
 });
 
-test("only the localhost demo rows carry feedback, and each says so (the live list never shows made-up reviews)", () => {
-  const library = read("../config/library.ts");
-  assert.match(library, /export const ENTRIES: Entry\[\] = \[\];/, "the real list must stay empty until real, tested sites are added");
-  const preview = read("../config/library-preview.ts");
-  assert.match(preview, /feedback:/);
-  assert.match(preview, /made up/i);
+test("only the localhost demo (npm run dev:demo) carries feedback, it is labelled made up, and the real list is untouched", async () => {
+  const { ENTRIES } = await import("../config/library.ts");
+  const { withDemoFeedback } = await import("../config/demo-feedback.ts");
+  const demo = withDemoFeedback(ENTRIES);
+  assert.equal(demo.length, ENTRIES.length);
+  assert.ok(demo.some((e) => e.feedback?.length), "the demo should add some feedback");
+  assert.ok(demo.some((e) => !e.feedback), "some entries stay empty, to show the empty state");
+  for (const e of demo) if (e.feedback) {
+    assert.equal(e.demoFeedback, true);
+    for (const f of e.feedback) assert.ok(!f.text || /made up/i.test(f.text), "every example line says it is made up");
+  }
+  // The real list is not changed, and the page only imports the demo when the dev switch is on.
+  for (const e of ENTRIES) assert.equal(e.feedback, undefined);
+  const page = read("../pages/websites.astro");
+  assert.match(page, /import\.meta\.env\.DEV && import\.meta\.env\.PUBLIC_DEMO_FEEDBACK/);
+  assert.match(read("../components/library/FeedbackDrawer.tsx"), /Demo only: the feedback below is made up/);
+});
+
+test("the link to each website opens safely in a new tab and carries no tracking", () => {
+  const source = read("../components/library/LibraryPage.tsx");
+  assert.match(source, /href=\{entry\.url\}/);
+  assert.match(source, /rel="noopener noreferrer"/);
+  assert.match(source, /target="_blank"/);
+  assert.doesNotMatch(source, /utm_|[?&]ref=/);
+});
+
+test("the list page has the 'Top user scored' and 'Best for free' tabs, and its header has no extra 'How we review' button", () => {
+  const source = read("../components/library/LibraryPage.tsx");
+  assert.match(source, /id: "user", label: "Top user scored"/);
+  assert.match(source, /id: "free", label: "Best for free"/);
+  // The two tabs are placed after "Top scored", in this order.
+  assert.ok(source.indexOf('label: "Top scored"') < source.indexOf('label: "Top user scored"'));
+  assert.ok(source.indexOf('label: "Top user scored"') < source.indexOf('label: "Best for free"'));
+  assert.doesNotMatch(read("../pages/websites.astro"), /How we review/);
+});
+
+test("each row shows one cut-off line of the description that the full text replaces when the row opens", () => {
+  const source = read("../components/library/LibraryPage.tsx");
+  assert.match(source, /truncate[^"]*">\{row\.summary\}/); // the one-line preview
+  assert.match(source, /PREVIEW_SHUT/); // it folds away when the row opens
+});
+
+test("the list page drops its content in on arrival: CSS only, transform and opacity only, off for reduced motion, and only once", () => {
+  const css = read("../styles/drop.css");
+  assert.match(read("../styles/global.css"), /@import "\.\/drop\.css";/);
+  // Only motion that the graphics chip does for free: no width, height, top, left or filter inside the keyframes.
+  const frames = css.match(/@keyframes drop-in \{[\s\S]*?\n {2}\}/)?.[0] ?? "";
+  assert.ok(frames, "@keyframes drop-in is missing");
+  assert.match(frames, /opacity/);
+  assert.match(frames, /transform/);
+  assert.doesNotMatch(frames, /\b(width|height|top|left|right|bottom|margin|padding|filter|blur)\b/);
+  // Starts only when motion is allowed, and the delay keeps things hidden (fill "both") instead of flashing.
+  assert.match(css, /@media \(prefers-reduced-motion: no-preference\)/);
+  assert.match(css, /animation-fill-mode:\s*both|\) both/);
+  // The page puts the class on its heading words, its sentence words and the island's parts, with a delay each.
+  const page = read("../pages/websites.astro");
+  assert.match(page, /class="drop(-far)? /);
+  assert.match(page, /--d/);
+  const island = read("../components/library/LibraryPage.tsx");
+  assert.match(island, /entering/); // the classes come off after the entrance, so rows that appear later do not drop again
+  assert.match(island, /drop/);
 });

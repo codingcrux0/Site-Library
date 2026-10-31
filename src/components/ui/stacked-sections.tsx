@@ -32,7 +32,8 @@ const GRID =
 // Shared by the picture and the animated scene. The height cap keeps both columns on one phone screen.
 const PICTURE = "aspect-[4/3] max-h-[28lvh] w-full rounded-3xl md:max-h-none";
 
-export default function StackedSections({ items }: { items: Category[] }) {
+// `status` is the small label above the name (for example "12 websites"); the page works it out from the list.
+export default function StackedSections({ items }: { items: (Category & { status: string })[] }) {
   return (
     <section id="categories" aria-labelledby="categories-title" data-keep-palette>
       <h2 id="categories-title" className="sr-only">

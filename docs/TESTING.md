@@ -448,3 +448,49 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 | Phone (390 px, touch, no hover) | description, catch, feedback button and the circle all stay visible in the row; panel fills the width; no sideways overflow |
 | Speed after adding it (4x CPU, list page) | no long tasks in colour drag, dark switch or hover sweep (worst frame 83 ms); stars still 1 per row at rest, 5 on the hovered row |
 | Not tested | a real phone, Safari, Firefox, a screen reader; the live site (not pushed yet) |
+
+## 2026-10-31 — real list, five categories, honest wording (D34)
+
+| Check | Result |
+|---|---|
+| `npm test` | 100 of 100 pass (was 93). New `library-data.test.mjs`, written first (the data and wording tests failed before the change): categories and tag groups match; every category has a scene that exists; tags unique; every entry has valid id, category, 1 to 4 known tags (at most 1 from another category), a score equal to the sum of four 1-to-5 marks, a date, an https address with no tracking part, used once; the real list carries no feedback; no source file says "tested by hand" or "by a real person"; website links open safely (`noopener noreferrer`, new tab, no utm); the demo adds only labelled feedback and leaves the real list untouched. |
+| `npm run check` / build / audit / secrets | 0 errors, 0 warnings, 0 hints; 3 pages built; `npm audit` 0 vulnerabilities; gitleaks no leaks; `.env` ignored and not tracked; no dependency added |
+| Built pages | none contain "Example reader" or the old wording; the panel's "Demo only: ... made up" label exists only as code that shows when the demo flag is on |
+| Real browser, 1440 px | home: hero "Now listing 32 websites", 5 boxes with "12 / 4 / 7 / 4 / 5 websites", three new pictures read by eye (a fault in the templates picture, a collapsed block, was found and fixed); list: 32 sites, 4 pages, each sidebar category shows the right count and first row, filter chips per category show real counts, search "react" finds the React libraries, Top scored puts the two 17s first, My lists and the feedback panel (empty state) work, each row links to its site in a new tab; dark mode contrast: only the known tool artifact; sign-in page and home have no sideways overflow. Console clean. |
+| `npm run dev:demo` | circles "3.7 /5" etc. on two thirds of the rows and "–" on the rest; the panel says "Demo only: the feedback below is made up to show the design." (checked after stopping the normal dev server for a minute, then restarted it; the normal page has 0 demo lines) |
+| Phone (390 px, touch) | home box and list rows read well: description, catch, feedback and Visit buttons stay in the row; panel fills the width; no sideways overflow |
+| Speed (4x slowed CPU) | list: no long stalls in colour drag, dark switch or hover sweep (worst frame 83 ms); home: no long stalls, scroll 16.5 ms a frame. One run of the home colour drag showed 8 frames and a 683 ms frame right after the dev server restarted; two repeats gave 64 frames, worst 50 ms (noise). |
+| Page size (gzip) | home 24.7 KB, list 30.9 KB (was 20.9 KB: the 32 entries are inside the page, about 0.2 KB each), sign-in 21.3 KB. At this rate 1,000 entries would be about 200 KB: more than my earlier estimate of about 110 KB, so the move to server-side search (D28) should come before 1,000. |
+| Not tested | a real phone, Safari, Firefox, a screen reader; the live site (not pushed yet); the accuracy of each catch against the sites today (they come from one or two pages each; low-confidence ones are marked in `docs/drafts/batch-01.md`) |
+
+
+## 2026-10-31 — several categories, Best for free, Top user scored, tag filter, row preview (D35)
+| Check | Result |
+|---|---|
+| `npm test` | 121 of 121 pass (was 100). Written first: `listings.test.mjs` (rows per category, own score/tags/words per placement, falling back to the main words, search text, every tab's order, "user" order with and without ratings, nothing mutated) and the new search tests (red before the change: `countTags` and `matchesQuery`; the listings file did not exist). Data tests rewritten for placements and free scores (marks sum, free quality and freshness equal the main marks, a free site's words never mention a paid plan). Proved they catch mistakes: changing one score made `score is not the sum of the marks` fail, changing a free mark made `free quality must match` fail; both restored. |
+| `npm run check` / build / audit / secrets | 0 errors, 0 warnings, 0 hints; 3 pages built; `npm audit` 0 vulnerabilities; gitleaks no leaks; `.env` ignored and not tracked; no dependency added |
+| Real browser, 1440 px | list header has no "How we review"; heading and sentence read as intended; tabs All sites / Newest / Oldest / Top scored / Top user scored / Best for free / My lists; sidebar 32 | 13 / 5 / 9 / 8 / 6; Top user scored with no ratings follows our score and says so; Best for free shows Evil Charts 18, 8bitcn 17, EasyUI 16, Footer 12, Collect UI 11, Navbar Gallery 11 with "Free score"; free + Design Inspiration gives 3, free + Motion gives the empty message; Top scored + Templates & Assets shows the category's own scores (ReUI 14 ...) and "Also in UI Components"; the filter in Templates & Assets lists Templates 6, Starters 2 ... and the foreign types React, Blocks, Animation, Dashboards; hover opens the row and the one-line preview folds away. Console clean. |
+| Dark mode | Best for free tab reads well; the only low contrast is the known tool artifact on the selected tab pill |
+| Phone (390 px) | no sideways overflow; the 7 tabs scroll sideways inside their strip |
+| Speed (6x slowed CPU) | typing "react animation", 4 tab switches and 5 category switches: long tasks 81, 121 and 63 ms on switches (about one frame at normal speed), page load 162 ms; worst frame 100 ms |
+| Page size (gzip) | home 24.6 KB, list 32.1 KB (was 30.9 KB), list script 17.5 KB |
+| Not tested | a real phone, Safari, Firefox, a screen reader; Top user scored with real ratings in the browser (only the unit tests; demo mode was not re-run); the live site (not pushed); whether each free claim stays true (it says "found", from the pages read on 2026-10-31) |
+
+
+## 2026-10-31 — one grading system, 25 more websites, seven categories, drop-in entrance (D36)
+| Check | Result |
+|---|---|
+| `npm test` | 124 of 124 pass (was 121 after D35 plus new). Written first and seen failing: shared tags and `filterGroupsFor`, "a free score exists exactly when the free-tier mark is 5", "GRADING.md exists and the data file points to it", "every category has a site" (the two new categories had none), and the drop-in test (stylesheet imported, keyframes use only transform and opacity, gated by reduced motion, classes on the page and the island, removed after the entrance). Two data guards also caught my own wording (a catch that said "over a year ago" or "paid software" on a free site) and were satisfied by rewording, not by loosening them. |
+| `npm run check` / build / audit / secrets | 0 errors, 0 warnings, 0 hints; 3 pages built; `npm audit` 0 vulnerabilities; gitleaks no leaks; `.env` ignored and not tracked; no dependency added |
+| Real browser, 1440 px | home: 7 boxes "01 / 07" to "07 / 07" with counts 15, 11, 7, 10, 12, 10, 7; hero "Now listing 57 websites"; the cube and timeline pictures read by eye; list: sidebar counts 57, 15, 11, 7, 10, 12, 10, 7; Top scored, Best for free (26 sites; 3D 7; Video & Audio 7), the filter inside Video & Audio (own types, then shared, then React from a second placement), search "blender" finds MCP for Blender; console clean |
+| Entrance | frames at 0.25, 0.6, 1.0, 1.5 and 3.4 s show words, sidebar and rows dropping in turn; final positions of 29 elements are identical with and without the animation (reduced motion run: nothing animates); the sentence words travel only 0.6 rem so wrapped lines do not overlap in flight |
+| Phone (390 px) | list and home: no sideways overflow; 7 boxes on the home page |
+| Speed (6x slowed CPU) | typing, 4 tab switches, 4 category switches and a page change: longest task 157 ms at page load, 97 ms on switches (about one frame at normal speed); no console problems |
+| Page size (gzip) | home 25.7 KB, list 37.8 KB (was 32.1 KB with 32 websites; about 0.2 KB per placement), list script 18.0 KB |
+| Not tested | a real phone, Safari, Firefox, a screen reader; the entrance on a slow phone; Top user scored with real ratings in the browser; the live site (not pushed); whether each catch still matches the site today; Land-book (could not be read) |
+
+## 2026-10-31 — security hardening (D37)
+- `src/lib/security-headers.test.mjs` (7 tests, written first; 5 failed before the settings existed): the response headers, `frame-ancestors`, the Content Security Policy settings (no `unsafe-eval`, no script override, nothing outside allowed), the worker's headers, robots.txt, sitemap.xml, `.env` in `.gitignore`. Mutation check: adding `script-src 'unsafe-eval'` to the config made the policy test fail; restored.
+- Real browser (Chrome, built site, policy active): home, list and sign-in loaded with 0 blocked resources and 0 console problems; 7 home boxes, 45 list rows, tab switch and dark mode worked. An injected inline script did not run; an outside script and an outside image were refused (3 violations reported).
+- Flood test against the real worker with its real Durable Object, run on this computer (`wrangler dev`): 3,000 counter reads and 2,000 page loads all 200; 500 browser-like POSTs in a burst raised the counter by exactly 10 (the brake); 200 robot POSTs counted 0; cross-site POST 403; DELETE 405; unknown API path 404; a 2 MB body and an 8 KB query string did not crash it. Headers confirmed on pages and on the API.
+- Not tested: a flood against the live site (it would use the free daily allowance), Cloudflare's own protection, Safari and Firefox.

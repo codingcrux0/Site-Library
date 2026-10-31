@@ -1,18 +1,17 @@
-// The four boxes on the landing page. Change the words here; the layout reads from this list.
-// The words come from the product spec (project_spec.md sections 2 and 12), so nothing here claims more than the plan.
-// Only the first box is live. The other three are the owner's picks for the next categories (the spec adds them one at a time).
+// The category boxes on the home page, and the categories on the list page. Change the words here; the layout reads from this list.
+// Order matters: it is the order on the home page and in the sidebar. A category is only worth having if it will hold several sites.
 //
 // `scene` picks the animated mini screen shown in the picture box (components/scenes/scene.tsx).
 // `image` is optional: if you add one, it replaces the animated scene.
 // To add one: put the file in public/images/ and write { src: "/images/yourfile.webp", alt: "What it shows" }.
 // `tint` must be one of the colours defined in src/styles/global.css (bg-tint-*).
+// A new category also needs a group of tags with the SAME name in src/config/tags.ts (npm test checks the two lists match).
 
 import type { SceneName } from "@/components/scenes/scene";
 
 export type Category = {
   name: string;
   summary: string;
-  status: string;
   tint: "bg-tint-sky" | "bg-tint-sand" | "bg-tint-sage" | "bg-tint-lilac";
   scene: SceneName;
   image?: { src: string; alt: string };
@@ -20,35 +19,52 @@ export type Category = {
 
 export const CATEGORIES: Category[] = [
   {
-    name: "Frontend Components",
+    name: "UI Components",
     summary:
-      "Component libraries, UI kits and the sites behind them. Each one is tried by hand, dated and scored, with the catch spelled out.",
-    status: "Now testing",
+      "Copy-paste component libraries for React, React Native and more, from buttons and charts to whole dashboards. Each one is scored, with its free limits and its catch written down.",
     tint: "bg-tint-sky",
     scene: "components",
   },
   {
-    name: "Dev Tools",
+    name: "Motion & Animation",
     summary:
-      "Hosting, databases, APIs, editors and command-line helpers. The same hand-testing, the same dates, the same honest catch.",
-    status: "Coming next",
+      "Animation libraries, transition packs and galleries of real app interactions. See what moves well, and what costs extra.",
     tint: "bg-tint-sand",
-    scene: "devtools",
+    scene: "motion",
   },
   {
-    name: "Productivity",
+    name: "3D & Graphics",
     summary:
-      "Notes, tasks, calendars and focus tools. Free plans often hide their limits, so every limit is written down plainly.",
-    status: "Coming next",
-    tint: "bg-tint-sage",
-    scene: "productivity",
-  },
-  {
-    name: "AI Tools",
-    summary:
-      "Chat assistants, writing and image helpers. Free plans change fast, so each one is dated and its catch is spelled out.",
-    status: "Coming next",
+      "Engines, renderers, physics and effects for 3D on the web and beyond, plus an AI plugin for Blender. Most are open source, and each one says how much 3D knowledge you need first.",
     tint: "bg-tint-lilac",
-    scene: "ai",
+    scene: "graphics",
+  },
+  {
+    name: "Video & Audio",
+    summary:
+      "Tools for making, cutting, converting, recording and analysing video, audio and speech, from desktop apps to code libraries. The free ones are marked, and the hard setup steps are written down.",
+    tint: "bg-tint-sand",
+    scene: "video",
+  },
+  {
+    name: "Design Inspiration",
+    summary:
+      "Galleries of landing pages, navigation bars, footers and app screens to learn from. Some are free, some hide most of the library behind a plan, and each one says which.",
+    tint: "bg-tint-sage",
+    scene: "gallery",
+  },
+  {
+    name: "Templates & Assets",
+    summary:
+      "Ready-made templates, starter projects and backgrounds. The free ones are marked, and the price of every paid one is written down.",
+    tint: "bg-tint-lilac",
+    scene: "templates",
+  },
+  {
+    name: "Tools & Utilities",
+    summary:
+      "Everyday tools: PDF and image helpers, AI assistants, Mac apps and directories of more tools. Free plans often hide their limits, so each limit is written down plainly.",
+    tint: "bg-tint-sky",
+    scene: "search",
   },
 ];

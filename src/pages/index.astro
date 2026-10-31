@@ -8,14 +8,16 @@ import Skiper39 from '@/components/ui/skiper39';
 import StackedSections from '@/components/ui/stacked-sections';
 import Skiper31 from '@/components/ui/text-scroll-animation';
 import { CATEGORIES } from '@/config/categories';
+import { ENTRIES } from '@/config/library';
 import { SITE } from '@/config/site';
+import { placementCounts } from '@/lib/listings';
 import Layout from '@/layouts/main.astro';
 
 // The three promises from the spec ("our edge"). Kept as data so the markup stays short.
 const promises = [
 	{
-		title: 'Tested, not just listed',
-		body: 'Every entry is tried by hand and shows the date it was tested.',
+		title: 'Reviewed, not just listed',
+		body: 'Every entry is read through and shows the date it was checked.',
 	},
 	{
 		title: 'The catch, up front',
@@ -23,14 +25,21 @@ const promises = [
 	},
 	{
 		title: 'Two separate scores',
-		body: 'My score from testing and the community score from users. Never mixed.',
+		body: 'Our score from the review and the community score from users. Never mixed.',
 	},
 ];
 
 const year = new Date().getFullYear();
+
+// Each box says how many websites it holds, counted from the real list when the page is built (a website in two categories counts in both).
+const counts = placementCounts(ENTRIES);
+const categoryBoxes = CATEGORIES.map((category) => {
+	const count = counts.get(category.name) ?? 0;
+	return { ...category, status: `${count} ${count === 1 ? 'website' : 'websites'}` };
+});
 ---
 
-<Layout title={`${SITE.name}: useful websites, tested by hand`} description={SITE.description}>
+<Layout title={`${SITE.name}: useful websites, reviewed and scored`} description={SITE.description}>
 	<!-- Start downloading the crowd picture right away, at low priority (after the page's own files), instead of waiting for the crowd's script to ask for it. -->
 	<!-- Two pictures: a smaller one for narrow screens. The width rule must match NARROW_QUERY in skiper39.tsx, or a screen would download both. -->
 	<link slot="head" rel="preload" as="image" href="/images/open-peeps-crowd-phone.png" media="(max-width: 639px)" fetchpriority="low" />
@@ -56,7 +65,7 @@ const year = new Date().getFullYear();
 		<Skiper31 client:visible />
 
 		<!-- Category boxes that stack as you scroll. No client:* directive = plain HTML + CSS. -->
-		<StackedSections items={CATEGORIES} />
+		<StackedSections items={categoryBoxes} />
 
 		<section
 			id="how-we-test"
@@ -67,7 +76,7 @@ const year = new Date().getFullYear();
 				id="how-we-test-title"
 				class="text-xs font-medium tracking-[0.14em] text-ink-muted uppercase"
 			>
-				How we test
+				How we review
 			</h2>
 			<ol class="mt-10 grid gap-10 sm:grid-cols-3 sm:gap-12">
 				{

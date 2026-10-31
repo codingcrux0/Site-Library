@@ -180,7 +180,7 @@ interface Skiper31Props {
 const Skiper31 = ({
   text = "Find what works",
   caption = "For the stack you already use",
-  moreLines = ["Tested by hand", "Dated and scored", "With the catch up front"],
+  moreLines = ["Reviewed, not just listed", "Dated and scored", "With the catch up front"],
 }: Skiper31Props) => {
   const reduceMotion = usePrefersReducedMotion();
   const iconsRef = useRef<HTMLDivElement | null>(null);

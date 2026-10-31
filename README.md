@@ -1,7 +1,7 @@
 # Site Library (working name)
 
-A free, tested, ranked library of useful websites. Every entry is tried by hand, dated, scored, and comes with "the catch".
-Version 1 has one category: Frontend Components. The landing page is built; there is no database and no real sign-in yet.
+A free library of useful websites. Every entry is reviewed, dated, scored, and comes with "the catch" (the scores come from reading each site's own pages, not from using it; see `docs/DECISIONS.md` D34, D35 and D36).
+It lists 32 websites in five categories. The home page and the list page are built; there is no database and no real sign-in yet.
 
 Built with Astro 7 (static pages) + React (small interactive pieces) + Tailwind 4.
 
@@ -81,9 +81,10 @@ site-library/
 | Site name and links | `src/config/site.ts` |
 | The words and picture of each home box | `src/config/categories.ts` |
 | The feature cards on the sign-in page | `src/config/showcase.ts` |
-| The websites on the list page (only tested, dated ones) | `ENTRIES` in `src/config/library.ts` |
+| The websites on the list page (only reviewed, dated ones; one website can have several categories, see its `placements`) | `ENTRIES` in `src/config/library.ts` |
 | The type words (React, CSS, Java...) used by the filter and each entry's `tags` | `src/config/tags.ts` |
-| The demo rows seen only on your computer | `src/config/library-preview.ts` (never in the live build) |
+| The websites on the list | `src/config/library.ts` (`ENTRIES`); drafts of new batches in `docs/drafts/` |
+| Made-up feedback for design checks, your computer only | `src/config/demo-feedback.ts`, started with `npm run dev:demo` (never in the live build) |
 | The colour wheel, dark switch and their colour rules | `src/components/ThemeDock.tsx`, `src/lib/theme.ts`, dark palette in `src/styles/global.css` |
 | The animated mini screens | `src/components/scenes/scene.tsx` and `src/styles/scenes.css` |
 | Colours and design tokens | `src/styles/global.css` |
@@ -98,7 +99,8 @@ site-library/
 | `docs/project_spec.md` | The product spec |
 | `docs/ARCHITECTURE.md` | How the pieces fit |
 | `docs/SECURITY.md` | Threat model, permission table, controls |
-| `docs/DECISIONS.md` | What we chose and why (D1 to D33) |
+| `docs/DECISIONS.md` | What we chose and why (D1 to D37) |
+| `docs/GRADING.md` | The one set of rules every website is graded, categorised and tagged by |
 | `docs/TESTING.md` | What has been verified, with real results |
 | `docs/INCIDENT.md` | What to do when something goes wrong |
 | `docs/COMPONENTS.md` | Component inventory and design tokens |

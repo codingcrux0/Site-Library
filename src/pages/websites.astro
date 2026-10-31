@@ -5,33 +5,39 @@ import LibraryPage from '@/components/library/LibraryPage';
 import { CATEGORIES } from '@/config/categories';
 import { ENTRIES } from '@/config/library';
 import { SITE } from '@/config/site';
-import { TAG_GROUPS } from '@/config/tags';
 import Layout from '@/layouts/main.astro';
 
-// The real list is empty until tested entries are added to src/config/library.ts.
-// Only `npm run dev` on your computer fills it with labelled demo rows, so the design can be seen with 20 pages.
-// import.meta.env.DEV is false in the build, so the live site never contains the demo rows.
-const entries = import.meta.env.DEV ? (await import('@/config/library-preview')).previewEntries(TAG_GROUPS) : ENTRIES;
+// The real list lives in src/config/library.ts. `npm run dev:demo` (your computer only) adds clearly labelled made-up feedback to a copy of it,
+// so the rating circle and the feedback panel can be seen with numbers in them. import.meta.env.DEV is false in the build,
+// so the live site never contains the demo.
+const entries =
+	import.meta.env.DEV && import.meta.env.PUBLIC_DEMO_FEEDBACK
+		? (await import('@/config/demo-feedback')).withDemoFeedback(ENTRIES)
+		: ENTRIES;
 
 const categories = CATEGORIES.map((category) => category.name);
+
+// The heading and the sentence under it drop in word by word (src/styles/drop.css): each word is its own box with its own start delay.
+const heading = 'Websites worth your time.';
+const lede = 'Every site is reviewed, scored and dated, with its catch up front. Filter by what you need, then open a row to read the rest.';
 ---
 
-<Layout title={`The list | ${SITE.name}`} description="The list of tested websites.">
+<Layout title={`The list | ${SITE.name}`} description="Useful websites, each reviewed, scored and dated, with the catch up front.">
 	<SiteHeader>
 		<!--
-			Right side of the header: "How we test" and the search box.
-			The empty spot with id="header-search" is filled by the list island (see LibraryPage.tsx). Its size is fixed here,
-			so the header does not jump when the box appears. On phones the link hides and the box takes the room.
+			Right side of the header: just the search box. The empty spot with id="header-search" is filled by the list island (see LibraryPage.tsx).
+			Its size is fixed here, so the header does not jump when the box appears.
 		-->
-		<div class="flex min-w-0 flex-1 items-center justify-end gap-6">
-			<a href="/#how-we-test" class="hidden text-sm text-ink-secondary transition-colors hover:text-ink-primary sm:inline">How we test</a>
-			<div id="header-search" class="h-10 w-full sm:w-72"></div>
+		<div class="flex min-w-0 flex-1 items-center justify-end">
+			<div id="header-search" class="drop h-10 w-full sm:w-72" style="--d: 700"></div>
 		</div>
 	</SiteHeader>
 	<main class="mx-auto max-w-6xl px-6 pt-6 pb-20 sm:pt-10 sm:pb-24">
-		<h1 class="text-[clamp(2.25rem,5vw,3.75rem)] leading-[1.05] font-bold tracking-tight">The list</h1>
+		<h1 class="text-[clamp(2.25rem,5vw,3.75rem)] leading-[1.05] font-bold tracking-tight">
+			{heading.split(' ').map((word, i) => <Fragment><span class="drop-far inline-block" style={`--d: ${80 + i * 110}`}>{word}</span>{' '}</Fragment>)}
+		</h1>
 		<p class="mt-4 mb-8 max-w-xl text-lg leading-relaxed text-ink-secondary">
-			Each website is tried by hand, then dated and scored. Nothing is listed until it has been tested.
+			{lede.split(' ').map((word, i) => <Fragment><span class="drop inline-block" style={`--d: ${420 + i * 28}; --drop-y: -0.6rem`}>{word}</span>{' '}</Fragment>)}
 		</p>
 		<!-- client:load = the page's tabs, sidebar and page numbers need their script right away. The HTML is already complete without it. -->
 		<LibraryPage client:load entries={entries} categories={categories} />

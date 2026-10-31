@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Check, Heart, Search, Share2, Sparkles } from "lucide-react";
+import { Check, Heart, Search, Share2 } from "lucide-react";
 
 /*
  * Small animated "mini screens" that fill the picture boxes (home page boxes and the sign-in side panel).
@@ -7,7 +7,7 @@ import { Check, Heart, Search, Share2, Sparkles } from "lucide-react";
  * React renders them to static HTML at build time. The motion lives in src/styles/scenes.css.
  *
  * Each scene shows one real feature from the spec (section 7) using grey "skeleton" bars instead of real text,
- * so it never states a fact about a real website. The few words in them ("Dated", "The catch", "My score"...)
+ * so it never states a fact about a real website. The few words in them ("Dated", "The catch", "Our score"...)
  * are the site's own feature names.
  *
  * Scenes are decorative: the box or card around them carries the real heading and description.
@@ -23,9 +23,11 @@ export type SceneName =
   | "lists"
   | "stack"
   | "components"
-  | "devtools"
-  | "productivity"
-  | "ai";
+  | "motion"
+  | "gallery"
+  | "templates"
+  | "graphics"
+  | "video";
 
 // A grey placeholder line, w = how wide.
 const Bar = ({ w = "100%" }: { w?: string }) => <i className="sc-bar" style={{ "--w": w } as CSSProperties} />;
@@ -77,7 +79,7 @@ const SCENES: Record<SceneName, ReactNode> = {
   scores: (
     <div className="sc-card sc-roomy">
       {[
-        { label: "My score", to: 0.84, dark: true },
+        { label: "Our score", to: 0.84, dark: true },
         { label: "Community", to: 0.6, dark: false },
       ].map(({ label, to, dark }, i) => (
         <div className="sc-meter" key={label}>
@@ -206,68 +208,116 @@ const SCENES: Record<SceneName, ReactNode> = {
     </div>
   ),
 
-  // A terminal: two commands run, then a result line appears under a blinking cursor.
-  devtools: (
-    <div className="sc-card sc-term">
+  // Motion: a dot that pulses, a progress line that fills, and little tiles that pop in one after another.
+  motion: (
+    <div className="sc-card sc-roomy">
+      <div className="sc-row">
+        <i className="sc-chip-dot sc-pulse" style={{ "--tint": "var(--tint-lilac)" } as CSSProperties} />
+        <div className="sc-lines">
+          <Bar w="68%" />
+          <Bar w="44%" />
+        </div>
+      </div>
+      <span className="sc-track">
+        <i className="sc-fill sc-grow" style={step(1, { "--to": 0.82 })} />
+      </span>
+      <div className="sc-chips">
+        {["sky", "sand", "sage", "lilac"].map((tint, i) => (
+          <i className="sc-chip-dot sc-pop" key={tint} style={step(i + 2, { "--step": "0.45s", "--tint": `var(--tint-${tint})` })} />
+        ))}
+      </div>
+    </div>
+  ),
+
+  // A gallery: a search bar and a grid of little design tiles that rise in one after another.
+  gallery: (
+    <div className="sc-card sc-window">
       <div className="sc-dots">
         <i />
         <i />
         <i />
       </div>
-      <div className="sc-lines">
-        {["58%", "44%"].map((width, i) => (
-          <div className="sc-row sc-rise" key={i} style={step(i + 1, { "--step": "1s" })}>
-            <b className="sc-prompt">$</b>
-            <Bar w={width} />
-          </div>
-        ))}
-        <div className="sc-row sc-rise" style={step(3.2, { "--step": "1s" })}>
-          <span className="sc-ok">
-            <Check strokeWidth={3} />
-          </span>
-          <Bar w="36%" />
-          <i className="sc-cursor" />
-        </div>
+      <div className="sc-row sc-nav">
+        <Bar w="38%" />
+        <Bar w="16%" />
       </div>
-    </div>
-  ),
-
-  // A task board: one card slides from "To do" across to "Done".
-  productivity: (
-    <div className="sc-board">
-      {["To do", "Doing", "Done"].map((label, column) => (
-        <div className="sc-card sc-lane" key={label}>
-          <span className="sc-label">{label}</span>
-          {column === 0 && (
-            <>
-              <i className="sc-slot" />
-              <i className="sc-slot" />
-            </>
-          )}
-          {column === 2 && <i className="sc-slot sc-slot--done" />}
+      {[0, 1].map((row) => (
+        <div className="sc-minis" key={row}>
+          {[0, 1, 2].map((col) => (
+            <i className="sc-mini sc-rise" key={col} style={step(row * 3 + col + 1, { "--step": "0.35s" })} />
+          ))}
         </div>
       ))}
-      <i className="sc-mover sc-move" />
     </div>
   ),
 
-  // A chat: a question, three "thinking" dots, then the answer drops in.
-  ai: (
-    <div className="sc-card">
-      <div className="sc-bubble sc-bubble--me sc-rise" style={step(1)}>
-        <Bar w="70%" />
+  // Templates: a page layout (picture block, lines, button) and the colours it can wear.
+  templates: (
+    <div className="sc-card sc-window">
+      <div className="sc-dots">
+        <i />
+        <i />
+        <i />
       </div>
-      <div className="sc-thinking sc-rise" style={step(2)}>
-        {[0, 1, 2].map((i) => (
-          <i className="sc-think sc-pulse" key={i} style={step(i, { "--step": "0.25s" })} />
+      <div className="sc-row" style={{ padding: "2cqw 3.5cqw 3cqw" }}>
+        <i className="sc-mini sc-pulse" style={{ flex: "none", width: "26cqw", height: "20cqw", background: "var(--tint-lilac)" } as CSSProperties} />
+        <div className="sc-lines">
+          <Bar w="88%" />
+          <Bar w="62%" />
+          <span className="sc-btn" />
+        </div>
+      </div>
+      <div className="sc-chips" style={{ padding: "0 3.5cqw 3.5cqw" }}>
+        {["sky", "sand", "sage", "lilac"].map((tint, i) => (
+          <i className="sc-chip-dot sc-pop" key={tint} style={step(i + 1, { "--step": "0.45s", "--tint": `var(--tint-${tint})` })} />
         ))}
       </div>
-      <div className="sc-bubble sc-bubble--ai sc-rise" style={step(4.4)}>
-        <Sparkles strokeWidth={2.25} />
-        <div className="sc-lines">
-          <Bar w="92%" />
-          <Bar w="74%" />
-          <Bar w="52%" />
+    </div>
+  ),
+
+  // 3D: a small cube that turns slowly, in a window with a caption bar under it.
+  graphics: (
+    <div className="sc-card sc-window">
+      <div className="sc-dots">
+        <i />
+        <i />
+        <i />
+      </div>
+      <div className="sc-cube-wrap">
+        <div className="sc-cube">
+          {[0, 1, 2, 3, 4, 5].map((face) => (
+            <i key={face} />
+          ))}
+        </div>
+      </div>
+      <div className="sc-row sc-nav">
+        <Bar w="34%" />
+        <Bar w="14%" />
+      </div>
+    </div>
+  ),
+
+  // Video: a preview with a play button above a timeline of clips, and a playhead that slides along it.
+  video: (
+    <div className="sc-card sc-window">
+      <div className="sc-dots">
+        <i />
+        <i />
+        <i />
+      </div>
+      <div className="sc-reel">
+        <i className="sc-preview">
+          <b className="sc-play" />
+        </i>
+        <div className="sc-timeline">
+          {[
+            ["0%", "46%", "sky"],
+            ["38%", "50%", "sand"],
+            ["14%", "58%", "lilac"],
+          ].map(([left, width, tint]) => (
+            <i className="sc-clip" key={tint} style={{ "--l": left, "--w": width, "--tint": `var(--tint-${tint})` } as CSSProperties} />
+          ))}
+          <i className="sc-playhead" />
         </div>
       </div>
     </div>

@@ -14,7 +14,7 @@ const { title, description } = Astro.props;
 // Link previews need full addresses (not "/og-image.png"). SITE.url is set in src/config/site.ts.
 const pageUrl = new URL(Astro.url.pathname, SITE.url).href;
 const imageUrl = new URL('/og-image.png', SITE.url).href;
-const imageAlt = `${SITE.name}: a black check mark logo and the words "Useful websites, tested by hand".`;
+const imageAlt = `${SITE.name}: a black check mark logo and the words "Useful websites, reviewed and scored".`;
 ---
 
 <html lang="en">

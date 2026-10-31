@@ -78,8 +78,8 @@ OWASP Top 10 and OWASP ASVS (target Level 2) are the checklists. **Verify the cu
 | D. Input | Server-side schema validation, plain-text rendering, no open redirect | not verified |
 | E. Data | HTTPS + HSTS, minimal data, export + delete, backups tested | not verified |
 | F. Secrets | `.env` in .gitignore before first commit | **done** (file exists; verify before first commit) |
-| F. Secrets | Secret scanner | not set up (needs your approval to install gitleaks) |
-| G. Browser | CSP, HSTS, X-Content-Type-Options, frame-ancestors, Referrer-Policy, Permissions-Policy | not verified |
+| F. Secrets | Secret scanner | gitleaks run before every push (working tree and history: no leaks, 2026-10-31) |
+| G. Browser | CSP, HSTS, X-Content-Type-Options, frame-ancestors, Referrer-Policy, Permissions-Policy | **done 2026-10-31 (D37)**: checked in a real browser and by tests; live headers verified after the push |
 | H. Abuse | Bot check + rate limits on public forms | not verified |
 | I. Supply chain | Lockfile, audit, Dependabot | not verified |
 | J. Logging | Security event logging, audit log, INCIDENT.md | INCIDENT.md drafted |

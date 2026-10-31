@@ -3,9 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { CATEGORIES } from "../config/categories.ts";
-import { ENTRIES } from "../config/library.ts";
-import { previewEntries } from "../config/library-preview.ts";
-import { TAG_GROUPS, tagGroupsFor } from "../config/tags.ts";
+import { SHARED_TAGS, TAG_GROUPS, filterGroupsFor, tagGroupsFor } from "../config/tags.ts";
 import { completionFor, countTags, filterEntries, matchesQuery, suggestionWords } from "./search.ts";
 
 const sample = [
@@ -88,10 +86,17 @@ test("suggestionWords: names, categories and tags, once each, only from the entr
   assert.deepEqual(suggestionWords([]), []);
 });
 
-test("countTags: counts sites per tag inside a category (or everywhere)", () => {
-  assert.equal(countTags(sample, "").get("CSS"), 1);
-  assert.equal(countTags(sample, "Frontend Components").get("Vue"), 1);
-  assert.equal(countTags(sample, "Dev Tools").get("Vue"), undefined);
+test("countTags: counts the rows that carry each tag (the page gives it the rows of one category)", () => {
+  assert.equal(countTags(sample).get("CSS"), 1);
+  assert.equal(countTags(sample.slice(0, 2)).get("Vue"), 1);
+  assert.equal(countTags(sample.slice(2)).get("Vue"), undefined);
+  assert.equal(countTags([]).size, 0);
+});
+
+test("matchesQuery: uses the ready-made search text when a row has one, and also looks in 'also in' categories", () => {
+  assert.equal(matchesQuery({ ...sample[0], text: "only this" }, "this"), true);
+  assert.equal(matchesQuery({ ...sample[0], text: "only this" }, "alpha"), false); // the ready-made text is trusted
+  assert.equal(matchesQuery({ ...sample[0], alsoIn: ["Motion & Animation"] }, "motion"), true);
 });
 
 // ---- The data files ----
@@ -105,35 +110,16 @@ test("tags: every tag is unique and belongs to a real category", () => {
 });
 
 test("tagGroupsFor: one group for a category, all groups for none", () => {
-  assert.equal(tagGroupsFor("AI Tools").length, 1);
+  assert.equal(tagGroupsFor("Design Inspiration").length, 1);
   assert.equal(tagGroupsFor("").length, TAG_GROUPS.length);
 });
 
-test("real entries (the ones you add) follow the rules: known category and tags, score 4 to 20, a real date, unique id", () => {
-  const names = CATEGORIES.map((c) => c.name);
-  const known = new Set(TAG_GROUPS.flatMap((g) => g.tags));
-  const ids = new Set();
-  for (const entry of ENTRIES) {
-    assert.ok(names.includes(entry.category), `${entry.id}: unknown category`);
-    assert.ok(entry.tags.length > 0 && entry.tags.every((t) => known.has(t)), `${entry.id}: unknown or missing tag`);
-    assert.ok(Number.isInteger(entry.score) && entry.score >= 4 && entry.score <= 20, `${entry.id}: score`);
-    assert.match(entry.testedOn, /^\d{4}-\d{2}-\d{2}$/);
-    assert.ok(!entry.preview, `${entry.id}: real entries are never "preview"`);
-    assert.ok(!ids.has(entry.id), `${entry.id}: repeated id`);
-    ids.add(entry.id);
-  }
-});
-
-test("demo rows: 160 rows, 40 per category, each with known tags, all marked as preview", () => {
-  const rows = previewEntries(TAG_GROUPS);
-  const known = new Set(TAG_GROUPS.flatMap((g) => g.tags));
-  assert.equal(rows.length, 160);
-  for (const category of CATEGORIES) assert.equal(rows.filter((r) => r.category === category.name).length, 40);
-  for (const row of rows) {
-    assert.equal(row.preview, true);
-    assert.ok(row.tags.length >= 2 && row.tags.every((t) => known.has(t)));
-    assert.equal(new Set(row.tags).size, row.tags.length); // no tag twice on one row
-    assert.ok(TAG_GROUPS.find((g) => g.category === row.category).tags.includes(row.tags[0]));
-  }
-  assert.equal(new Set(rows.map((r) => r.id)).size, 160);
+test("filterGroupsFor: a category shows its own types first, then the shared ones, then the rest; no category shows the shared ones first", () => {
+  const inCategory = filterGroupsFor("Design Inspiration").map((g) => g.category);
+  assert.equal(inCategory[0], "Design Inspiration");
+  assert.equal(inCategory[1], SHARED_TAGS.category);
+  assert.equal(inCategory.length, TAG_GROUPS.length + 1);
+  const all = filterGroupsFor("").map((g) => g.category);
+  assert.equal(all[0], SHARED_TAGS.category);
+  assert.equal(all.length, TAG_GROUPS.length + 1);
 });

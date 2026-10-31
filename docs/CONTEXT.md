@@ -8,7 +8,19 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
-## Average rating circle and feedback panel (2026-10-31, newest, D33)
+## Security hardening (2026-10-31, newest, D37)
+A Content Security Policy now ships in every page (scripts limited to this site's own and fingerprinted inline ones), plus HSTS, COOP and frame-ancestors headers, robots.txt and a sitemap. Tested in a real browser and with a local flood against the real worker. See D37 for the honest limits. D34 to D37 were pushed live together.
+
+## One grading system, 57 websites, seven categories, drop-in entrance (2026-10-31, D36)
+Every website is graded by the rules in `docs/GRADING.md` (evidence in `docs/drafts/grades-2026-10-31.md`). 25 new websites were added (5 sites, 20 GitHub projects), two categories (3D & Graphics, Video & Audio) with new pictures, shared tags (Open source, AI...), and "Best for free" is now exactly the placements whose free-tier mark is 5 (26 websites). The list page drops its words, sidebar, tabs and rows in on arrival (`src/styles/drop.css`, CSS only). Localhost only, NOT pushed (together with D34 and D35). Next: the owner's verdict, then push; Land-book needs a hand check.
+
+## Several categories, Best for free, Top user scored (2026-10-31, D35)
+A website can sit in several categories and is judged again in each (`placements` in `src/config/library.ts`, rows built in `src/lib/listings.ts`). New tabs: Top user scored (falls back to our score while nobody has rated) and Best for free (completely free sites only, with their own free score; 6 today, chosen from evidence written in D35). Rows show one cut-off line that opens to the full text on hover. The filter shows only types that exist, with counts. List heading is "Websites worth your time." and the list header no longer has "How we review". Localhost only, NOT pushed (together with D34).
+
+## Real list and five categories (2026-10-31, D34)
+The list now holds 32 reviewed websites in five categories (UI Components, Motion & Animation, Design Inspiration, Templates & Assets, Tools & Utilities), drafted from the owner's links (`docs/drafts/batch-01.md`, with 5 links held back). The owner delegated categorising, scoring, descriptions and catches to Claude, so the wording says "reviewed and scored", never "tested by hand". Each row links to its site. Everything is on localhost only, NOT pushed. `npm run dev:demo` shows made-up feedback for design checks. Next: the owner's verdict, then push, then more links.
+
+## Average rating circle and feedback panel (2026-10-31, D33)
 Each row shows the average of all users' ratings in a small circle ("4.5 /5", "–" while nobody has rated) left of the star rating, and the hover box has a "See user feedback" button that slides a panel in from the right (average, bars per star, one card per feedback). The real list has no feedback, so the live site shows the empty state; only localhost demo rows have clearly labelled made-up feedback. Nothing saved or sent (no accounts). Not pushed: D31, D32 and D33 are all still local.
 
 ## Speed pass (2026-10-31, D32)
@@ -80,6 +92,6 @@ The header pill now says **"Page views"** and works **online** and locally with 
 2. Owner approves gitleaks, then secret scan, then the **first commit**. Nothing is committed yet.
 3. Hosted counter: a Cloudflare Pages Function for `/api/visits` + one stored number (D1 or KV), following the contract in DECISIONS.md D12. Needs a Cloudflare account; test it before it goes live.
 4. Real sign-in is M1/M4: Supabase Auth, Google/GitHub OAuth apps, redirect allow-list, rate limits. Needs the lawyer review first. Check Google's and GitHub's button branding rules then.
-5. Landing page polish before launch: security headers (`public/_headers` with CSP; Astro inlines small scripts, so the CSP needs hashes, see D7), favicon, real site name, Lighthouse + axe numbers.
+5. Landing page polish before launch: security headers (DONE in D37: CSP with hashes, HSTS, frame-ancestors), favicon, real site name, Lighthouse + axe numbers.
 6. Then back to milestone order: M1 (data model, RLS, admin login with MFA, CSV import).
 7. In parallel: owner tests entries and fills `research_template.csv` (keep real exports in `private/`).

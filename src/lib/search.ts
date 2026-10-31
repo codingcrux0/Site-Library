@@ -1,17 +1,21 @@
 // The list's search, filter and "ghost completion" rules, as plain functions (so they can be tested without a browser).
 // Tests: src/lib/search.test.mjs.
 
-// Only the parts of an entry that search looks at (a full Entry fits this).
-export type Searchable = { name: string; summary: string; category: string; tags: string[] };
+// Only the parts of a row that search looks at. `alsoIn` = the other categories the site is in. `text` = the words below, already joined and
+// lower-cased (the list builds it once per row, so typing in the search box does not rebuild it on every key press).
+export type Searchable = { name: string; summary: string; category: string; tags: string[]; alsoIn?: string[]; text?: string };
 
 // Lower case, one space between words, no spaces at the ends.
 const clean = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
+
+// The words a search looks in: name, summary, categories and tags.
+export const searchTextOf = (entry: Searchable): string => clean(`${entry.name} ${entry.summary} ${entry.category} ${(entry.alsoIn ?? []).join(" ")} ${entry.tags.join(" ")}`);
 
 // True when EVERY word typed appears somewhere in the name, summary, category or tags.
 export function matchesQuery(entry: Searchable, query: string): boolean {
   const words = clean(query).split(" ").filter(Boolean);
   if (words.length === 0) return true;
-  const text = clean(`${entry.name} ${entry.summary} ${entry.category} ${entry.tags.join(" ")}`);
+  const text = entry.text ?? searchTextOf(entry);
   return words.every((word) => text.includes(word));
 }
 
@@ -39,6 +43,7 @@ export function suggestionWords(entries: Searchable[]): string[] {
   for (const entry of entries) {
     words.add(entry.name);
     words.add(entry.category);
+    for (const other of entry.alsoIn ?? []) words.add(other);
     for (const tag of entry.tags) words.add(tag);
   }
   return [...words];
@@ -55,12 +60,9 @@ export function completionFor(typed: string, candidates: string[]): string {
   return matches[0].slice(typed.length);
 }
 
-// How many entries carry each tag, inside one category ("" = all of them).
-export function countTags(entries: Searchable[], category: string): Map<string, number> {
+// How many rows carry each tag. The page gives it the rows of one category (before search and types), so the counts match what the filter shows.
+export function countTags(rows: Searchable[]): Map<string, number> {
   const counts = new Map<string, number>();
-  for (const entry of entries) {
-    if (category !== "" && entry.category !== category) continue;
-    for (const tag of entry.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
-  }
+  for (const row of rows) for (const tag of row.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   return counts;
 }

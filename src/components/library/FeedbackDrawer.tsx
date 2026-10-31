@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 /*
  * The feedback panel: slides in from the right and lists what users said about one website, with the average and how the stars split.
  * It only READS. Accounts are not open yet (the legal gate), so "Write a review" only asks the visitor to sign in and nothing is saved
- * or sent. A website with no feedback shows an honest empty state: no made-up reviews, ever. (Only the localhost demo rows carry
+ * or sent. A website with no feedback shows an honest empty state: no made-up reviews, ever. (Only the localhost demo, started with `npm run dev:demo`, adds
  * example feedback, and the panel says so.)
  * It is built by hand with no new package: a dialog that traps Tab, closes with Escape or a click outside, locks the page behind it and
  * gives focus back to the button that opened it. It slides with transform and opacity only, which the graphics chip does for free.
@@ -123,9 +123,9 @@ export function FeedbackDrawer({ entry, onClose }: { entry: Entry; onClose: () =
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
-          {entry.preview && count > 0 ? (
+          {entry.demoFeedback && count > 0 ? (
             <p className="mb-4 rounded-lg border border-line-subtle bg-surface-sunken px-3 py-2 text-xs text-ink-secondary">
-              Layout preview: the feedback below is made up to show the design.
+              Demo only: the feedback below is made up to show the design.
             </p>
           ) : null}
 

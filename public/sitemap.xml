@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Written by hand (no extra package): the pages search engines should list. The account page is left out on purpose: accounts are not open yet.
+     Change <lastmod> when the content of a page changes. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://site-library.codingcrux0.workers.dev/</loc>
+    <lastmod>2026-10-31</lastmod>
+  </url>
+  <url>
+    <loc>https://site-library.codingcrux0.workers.dev/websites/</loc>
+    <lastmod>2026-10-31</lastmod>
+  </url>
+</urlset>

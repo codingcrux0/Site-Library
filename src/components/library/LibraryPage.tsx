@@ -1,15 +1,15 @@
-import { ArrowLeft, Bookmark, Folder, House, LayoutGrid, LogIn, Menu, MessagesSquare, X } from "lucide-react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowUpRight, Bookmark, Folder, House, LayoutGrid, LogIn, Menu, MessagesSquare, X } from "lucide-react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { GooeyTabs, type GooeyTab } from "@/components/ui/gooey-tabs";
 import { Pagination, PaginationEllipsis, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { SearchBox } from "@/components/ui/search-box";
 import { Sidebar, SidebarFooter, SidebarHeader, SidebarItem, SidebarNav, SidebarNested, SidebarSection } from "@/components/ui/sidebar";
 import type { Entry } from "@/config/library";
-import { tagGroupsFor } from "@/config/tags";
+import { filterGroupsFor } from "@/config/tags";
 import { formatDate } from "@/lib/format-date";
 import { pageRange } from "@/lib/page-range";
-import { summarizeFeedback } from "@/lib/ratings";
+import { anyRated, arrange, listingsFor, placementCounts, type Listing } from "@/lib/listings";
 import { countTags, filterEntries, suggestionWords } from "@/lib/search";
 import { cn } from "@/lib/utils";
 import { EntryActions } from "./EntryActions";
@@ -23,7 +23,10 @@ import { TypeFilter } from "./TypeFilter";
  * The search box sits in the site header (outside this island): the page leaves an empty spot with id="header-search" there and this
  * island draws the box into it (a "portal"), so the box can share this state without a new package.
  * "My lists" is still a labelled placeholder; saving lists comes next (see DECISIONS.md D27 and D28).
- * Each row shows its name and types; hovering (or tabbing to) a row turns it into a box and opens the description and "the catch" inside it.
+ * A row is one website seen through one category (src/lib/listings.ts): a website in two categories is judged in each, and the sidebar and
+ * the filter count it in both. "Top user scored" and "Best for free" are two more ways to order the same rows (D35).
+ * Each row shows its name, its types and ONE line of the description; hovering (or tabbing to) a row turns it into a box, swaps that line
+ * for the full description and opens "the catch" inside it.
  * The right of each row has a star rating, a Review button and a bookmark button (EntryActions.tsx). The sidebar has a Bookmarks view.
  * Accounts are not open yet, so those only ask the visitor to sign in (see D31).
  * Opening a row shows a "See user feedback" button; it opens ONE side panel (FeedbackDrawer.tsx) for the whole page (D33).
@@ -31,11 +34,18 @@ import { TypeFilter } from "./TypeFilter";
 
 const PAGE_SIZE = 8;
 
+// The entrance (src/styles/drop.css): while the page has only just arrived, its parts carry class "drop" and wait this many milliseconds
+// before dropping in. After ENTRANCE_MS the classes come off, so rows that appear later (a new page, tab or category) do not drop again.
+const ENTRANCE_MS = 2600;
+const at = (ms: number) => ({ "--d": ms }) as CSSProperties;
+
 const TABS: GooeyTab[] = [
   { id: "all", label: "All sites" },
   { id: "newest", label: "Newest" },
   { id: "oldest", label: "Oldest" },
   { id: "top", label: "Top scored" },
+  { id: "user", label: "Top user scored" },
+  { id: "free", label: "Best for free" },
   { id: "lists", label: "My lists" },
 ];
 
@@ -55,33 +65,40 @@ export default function LibraryPage({ entries, categories }: Props) {
   const [picked, setPicked] = useState<string[]>([]); // the types ticked in "Filter by type"
   const [searchSlot, setSearchSlot] = useState<HTMLElement | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [entering, setEntering] = useState(true); // true on the server too, so the first paint already has the classes
+  useEffect(() => {
+    const timer = setTimeout(() => setEntering(false), ENTRANCE_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  const drop = entering ? "drop" : undefined;
 
   // The header's empty spot only exists in the page, so it is looked up after the island starts (the server HTML has no box yet).
   useEffect(() => setSearchSlot(document.getElementById("header-search")), []);
 
-  const rows = useMemo(() => {
-    const sorted = filterEntries(entries, { category, tags: picked, query }); // a new list, so sorting it changes nothing else
-    if (tab === "newest") sorted.sort((a, b) => b.testedOn.localeCompare(a.testedOn) || a.name.localeCompare(b.name, "en", { numeric: true }));
-    else if (tab === "oldest") sorted.sort((a, b) => a.testedOn.localeCompare(b.testedOn) || a.name.localeCompare(b.name, "en", { numeric: true }));
-    else if (tab === "top") sorted.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-    else sorted.sort((a, b) => a.name.localeCompare(b.name, "en", { numeric: true }));
-    return sorted;
-  }, [entries, tab, category, picked, query]);
+  // Typing updates the box at once; the (heavier) list catches up a moment later, so the keys never lag.
+  const deferredQuery = useDeferredValue(query);
 
-  const suggestions = useMemo(() => suggestionWords(entries), [entries]);
-  const typeCounts = useMemo(() => countTags(entries, category), [entries, category]);
-  const perCategory = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const entry of entries) counts.set(entry.category, (counts.get(entry.category) ?? 0) + 1);
-    return counts;
-  }, [entries]);
-  const inScope = category ? (perCategory.get(category) ?? 0) : entries.length; // sites in this category before search and types
+  // One row per website for "All sites"; with a category picked, one row per website that is in it (judged in that category).
+  const everyRow = useMemo(() => listingsFor(entries, ""), [entries]);
+  const inCategory = useMemo(() => (category ? listingsFor(entries, category) : everyRow), [entries, category, everyRow]);
+  // "Best for free" only ever looks at the completely free websites.
+  const scoped = useMemo(() => (tab === "free" ? inCategory.filter((row) => row.free) : inCategory), [inCategory, tab]);
+  const rows = useMemo(
+    () => arrange(filterEntries(scoped, { tags: picked, query: deferredQuery }), tab),
+    [scoped, tab, picked, deferredQuery],
+  );
+
+  const suggestions = useMemo(() => suggestionWords(everyRow), [everyRow]);
+  const typeCounts = useMemo(() => countTags(scoped), [scoped]);
+  const perCategory = useMemo(() => placementCounts(entries), [entries]);
+  // The filter offers every type some website here has (the panel hides the rest), the category's own types first.
+  const filterGroups = useMemo(() => filterGroupsFor(category), [category]);
+  const inScope = scoped.length; // sites in this category (and tab) before search and types
   const narrowed = picked.length > 0 || query.trim() !== "";
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, totalPages);
   const shown = rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-  const isPreview = entries.some((entry) => entry.preview);
   const showingBookmarks = view === "bookmarks";
   const showingLists = tab === "lists" && !showingBookmarks;
 
@@ -93,8 +110,8 @@ export default function LibraryPage({ entries, categories }: Props) {
   const pickCategory = (name: string) => {
     setCategory(name);
     setView("list");
-    // Ticked types that do not belong to the new category are dropped, or the list would be empty for no visible reason.
-    const allowed = new Set(tagGroupsFor(name).flatMap((group) => group.tags));
+    // Ticked types that no website in the new category has are dropped, or the list would be empty for no visible reason.
+    const allowed = new Set(listingsFor(entries, name).flatMap((row) => row.tags));
     setPicked((current) => current.filter((tag) => allowed.has(tag)));
     setPage(1);
     setMenuOpen(false);
@@ -135,7 +152,7 @@ export default function LibraryPage({ entries, categories }: Props) {
     setPage(1);
   };
 
-  const heading = category || "All sites";
+  const heading = tab === "free" ? (category ? `${category}: best for free` : "Best for free") : category || "All sites";
 
   return (
     <div className="grid gap-6 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-10">
@@ -148,7 +165,11 @@ export default function LibraryPage({ entries, categories }: Props) {
           aria-expanded={menuOpen}
           aria-controls="library-sidebar"
           onClick={() => setMenuOpen((open) => !open)}
-          className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-line-subtle px-4 py-2.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:hidden"
+          style={entering ? at(200) : undefined}
+          className={cn(
+            "flex w-full cursor-pointer items-center justify-between rounded-lg border border-line-subtle px-4 py-2.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:hidden",
+            drop,
+          )}
         >
           <span>Categories and links</span>
           {menuOpen ? <X className="size-4" aria-hidden="true" /> : <Menu className="size-4" aria-hidden="true" />}
@@ -156,7 +177,7 @@ export default function LibraryPage({ entries, categories }: Props) {
 
         <div id="library-sidebar" className={cn("mt-3 md:mt-0 md:block", menuOpen ? "block" : "hidden")}>
           <Sidebar className="rounded-xl border border-line-subtle p-3 md:border-0 md:p-0">
-            <SidebarHeader>
+            <SidebarHeader className={drop} style={entering ? at(200) : undefined}>
               <a
                 href="/"
                 className="flex items-center gap-2 rounded-md text-sm font-medium text-ink-secondary transition-colors hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus motion-reduce:transition-none"
@@ -166,7 +187,7 @@ export default function LibraryPage({ entries, categories }: Props) {
               </a>
             </SidebarHeader>
             <SidebarNav>
-              <SidebarSection label="Browse">
+              <SidebarSection label="Browse" className={drop} style={entering ? at(280) : undefined}>
                 <SidebarItem href="/" icon={<House className="size-[18px]" />}>
                   Home
                 </SidebarItem>
@@ -182,17 +203,24 @@ export default function LibraryPage({ entries, categories }: Props) {
                   Bookmarks
                 </SidebarItem>
               </SidebarSection>
-              <SidebarSection label="Explore">
+              <SidebarSection label="Explore" className={drop} style={entering ? at(360) : undefined}>
                 <SidebarNested icon={<Folder className="size-[18px]" />} label="Categories" defaultOpen>
-                  {categories.map((name) => (
-                    <SidebarItem key={name} active={category === name && !showingBookmarks} badge={<Count>{perCategory.get(name) ?? 0}</Count>} onClick={() => pickCategory(name)}>
+                  {categories.map((name, index) => (
+                    <SidebarItem
+                      key={name}
+                      className={drop}
+                      style={entering ? at(520 + index * 55) : undefined}
+                      active={category === name && !showingBookmarks}
+                      badge={<Count>{perCategory.get(name) ?? 0}</Count>}
+                      onClick={() => pickCategory(name)}
+                    >
                       {name}
                     </SidebarItem>
                   ))}
                 </SidebarNested>
               </SidebarSection>
             </SidebarNav>
-            <SidebarFooter>
+            <SidebarFooter className={drop} style={entering ? at(900) : undefined}>
               <SidebarItem href="/sign-in" icon={<LogIn className="size-[18px]" />}>
                 Sign in
               </SidebarItem>
@@ -205,12 +233,12 @@ export default function LibraryPage({ entries, categories }: Props) {
         {/* Tabs on the left, the type filter on the right (it drops under the tabs on narrow screens, still at the right edge). */}
         {showingBookmarks ? null : (
           <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-0 max-w-full">
+            <div className={cn("min-w-0 max-w-full", drop)} style={entering ? at(450) : undefined}>
               <GooeyTabs tabs={TABS} value={tab} onChange={pickTab} idPrefix="library" aria-label="Ways to view the list" />
             </div>
             {showingLists ? null : (
-              <div className="ml-auto">
-                <TypeFilter groups={tagGroupsFor(category)} counts={typeCounts} picked={picked} onToggle={toggleType} onClear={() => setPicked([])} />
+              <div className={cn("ml-auto", drop)} style={entering ? at(560) : undefined}>
+                <TypeFilter groups={filterGroups} counts={typeCounts} picked={picked} onToggle={toggleType} onClear={() => setPicked([])} />
               </div>
             )}
           </div>
@@ -247,13 +275,6 @@ export default function LibraryPage({ entries, categories }: Props) {
           ref={panelRef}
           className="mt-6 scroll-mt-4"
         >
-          {isPreview && !showingLists && !showingBookmarks ? (
-            <p className="mb-5 rounded-lg border border-line-subtle bg-surface-sunken px-4 py-3 text-sm text-ink-secondary">
-              <strong className="font-semibold text-ink-primary">Layout preview.</strong> The rows below are made-up examples that show the design. They
-              are not tested entries, and they never appear on the live site.
-            </p>
-          ) : null}
-
           {showingBookmarks ? (
             // Bookmarks belong to an account, and accounts are not open yet, so this view asks for a sign-in instead of showing a list.
             <section aria-labelledby="library-bookmarks-title" className="rounded-xl border border-dashed border-line-strong px-6 py-12 text-center">
@@ -284,17 +305,32 @@ export default function LibraryPage({ entries, categories }: Props) {
             </section>
           ) : (
             <section aria-labelledby="library-heading">
-              <h2 id="library-heading" className="flex items-baseline gap-3 text-lg font-semibold tracking-tight">
+              <h2 id="library-heading" className={cn("flex items-baseline gap-3 text-lg font-semibold tracking-tight", drop)} style={entering ? at(640) : undefined}>
                 {heading}
                 <span className="text-sm font-normal text-ink-muted tabular-nums">{rows.length === 1 ? "1 site" : `${rows.length} sites`}</span>
               </h2>
+              {/* One honest sentence under the heading for the two tabs whose order needs explaining. */}
+              {tab === "free" ? (
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-secondary">
+                  Websites where we found no paid plan, no membership and no usage limit. They are ranked by a free score, judged on its own: quality, nothing in the way,
+                  clear terms and how recently they were updated.
+                </p>
+              ) : null}
+              {tab === "user" ? (
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-secondary">
+                  {anyRated(scoped)
+                    ? "Websites users rated highest come first. Any website nobody has rated yet follows, in the order of our score."
+                    : "Nobody has rated a website yet, so this follows our score. Once users start rating, the best rated come first."}
+                </p>
+              ) : null}
 
               {shown.length === 0 ? (
                 inScope === 0 ? (
-                  // Honest empty state. The rule: nothing is listed until it has been tested by hand and dated.
+                  // Honest empty state. The rule: nothing is listed until it has been reviewed and dated.
                   <p className="mt-6 max-w-xl leading-relaxed text-ink-secondary">
-                    {category ? `Nothing is listed in ${category} yet.` : "Nothing is listed yet."} Each website is tried by hand first, then dated and scored,
-                    so the first entries appear once they have been tested.
+                    {tab === "free"
+                      ? `No completely free websites in ${category || "the list"} yet. A website is added here only when we find no paid plan, membership or limit.`
+                      : `${category ? `Nothing is listed in ${category} yet.` : "Nothing is listed yet."} Each website is reviewed first, then dated and scored, so the first entries appear once they have been checked.`}
                   </p>
                 ) : (
                   // There are sites, but the search or the ticked types rule them all out.
@@ -311,8 +347,8 @@ export default function LibraryPage({ entries, categories }: Props) {
                 )
               ) : (
                 <ul className="mt-2 divide-y divide-line-subtle border-b border-line-subtle">
-                  {shown.map((entry) => (
-                    <EntryRow key={entry.id} entry={entry} onOpenFeedback={openFeedback} />
+                  {shown.map((row, index) => (
+                    <EntryRow key={row.entry.id} row={row} showFree={tab === "free"} dropAt={entering ? 780 + index * 70 : undefined} onOpenFeedback={openFeedback} />
                   ))}
                 </ul>
               )}
@@ -321,7 +357,7 @@ export default function LibraryPage({ entries, categories }: Props) {
         </div>
 
         {showingLists || showingBookmarks ? null : (
-          <div className="mt-8 flex flex-col items-center gap-3">
+          <div className={cn("mt-8 flex flex-col items-center gap-3", drop)} style={entering ? at(780 + shown.length * 70) : undefined}>
             <p aria-live="polite" className="text-sm text-ink-muted tabular-nums">
               {rows.length === 0
                 ? "No sites to show"
@@ -386,12 +422,33 @@ const DETAILS_OPEN =
   "group-hover/row:grid-rows-[1fr] group-hover/row:opacity-100 group-focus-within/row:grid-rows-[1fr] group-focus-within/row:opacity-100 " +
   "group-has-[[data-nudge]]/row:grid-rows-[1fr] group-has-[[data-nudge]]/row:opacity-100 [@media(hover:none)]:grid-rows-[1fr] [@media(hover:none)]:opacity-100";
 
-// memo: typing in the search box, opening the sidebar or switching a tab re-renders this page, but a row whose website did not change is skipped.
-const EntryRow = memo(function EntryRow({ entry, onOpenFeedback }: { entry: Entry; onOpenFeedback: (entry: Entry, button: HTMLElement) => void }) {
-  const { average, count } = summarizeFeedback(entry.feedback);
+// While a row is open, the one-line preview folds away (the full description takes its place). Same triggers as DETAILS_OPEN.
+const PREVIEW_SHUT =
+  "group-hover/row:grid-rows-[0fr] group-hover/row:opacity-0 group-focus-within/row:grid-rows-[0fr] group-focus-within/row:opacity-0 " +
+  "group-has-[[data-nudge]]/row:grid-rows-[0fr] group-has-[[data-nudge]]/row:opacity-0 [@media(hover:none)]:grid-rows-[0fr] [@media(hover:none)]:opacity-0";
+
+// memo: typing in the search box, opening the sidebar or switching a tab re-renders this page, but a row that did not change is skipped.
+const EntryRow = memo(function EntryRow({
+  row,
+  showFree,
+  dropAt,
+  onOpenFeedback,
+}: {
+  row: Listing;
+  showFree: boolean;
+  /** Set only during the page's entrance: this row drops in after this many milliseconds. */
+  dropAt?: number;
+  onOpenFeedback: (entry: Entry, button: HTMLElement) => void;
+}) {
+  const { entry, average, ratings } = row;
+  // "Best for free" shows the free score; every other tab shows the main score of the category being looked at.
+  const score = showFree && row.free ? { label: "Free score", value: row.free.score } : { label: "Score", value: row.score };
   return (
     // z-20 while open, so the box's shadow sits over the neighbouring rows.
-    <li className="group/row relative focus-within:z-20 hover:z-20 has-[[data-nudge]]:z-20">
+    <li
+      className={cn("group/row relative focus-within:z-20 hover:z-20 has-[[data-nudge]]:z-20", dropAt !== undefined && "drop")}
+      style={dropAt !== undefined ? at(dropAt) : undefined}
+    >
       <div
         className={cn(
           "-mx-4 grid gap-3 rounded-xl border border-transparent px-4 py-5 transition-[background-color,border-color,box-shadow] duration-200 motion-reduce:transition-none sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-10",
@@ -401,19 +458,36 @@ const EntryRow = memo(function EntryRow({ entry, onOpenFeedback }: { entry: Entr
         <div className="min-w-0">
           <h3 className="flex flex-wrap items-center gap-2 font-semibold tracking-tight">
             {entry.name}
-            {entry.preview ? (
-              <span className="rounded-full border border-line-strong px-2 py-0.5 text-[11px] font-medium text-ink-muted">Layout preview</span>
-            ) : null}
+            {/* A small arrow link to the website itself. It opens in a new tab and sends nothing extra (no tracking, no referrer). */}
+            <a
+              href={entry.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Visit ${entry.name} (opens in a new tab)`}
+              className="grid size-6 shrink-0 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-sunken hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+            >
+              <ArrowUpRight className="size-4" aria-hidden="true" />
+            </a>
           </h3>
-          {/* The types, so you can see why a site showed up for a filter or a search. */}
-          <ul aria-label="Types" className="mt-3 flex flex-wrap gap-1.5">
-            {entry.tags.map((tag) => (
+          {/* The types, so you can see why a site showed up for a filter or a search, and the other categories it is in. */}
+          <ul aria-label="Types" className="mt-3 flex flex-wrap items-center gap-1.5">
+            {row.tags.map((tag) => (
               <li key={tag} className="rounded-full border border-line-subtle px-2.5 py-0.5 text-xs text-ink-secondary">
                 {tag}
               </li>
             ))}
+            {row.alsoIn.length > 0 ? <li className="pl-1 text-xs text-ink-muted">Also in {row.alsoIn.join(", ")}</li> : null}
           </ul>
-          {/* Description and the catch. Shut = zero height (grid row 0fr); open = exactly as tall as the text (1fr), so there is no blank space. */}
+          {/* One line of the description, cut with "..." when it is longer. Hidden from screen readers (the full text below is read instead). */}
+          <div
+            aria-hidden="true"
+            className={cn("grid grid-rows-[1fr] transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none", PREVIEW_SHUT)}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <p className="truncate pt-3 text-sm text-ink-secondary">{row.summary}</p>
+            </div>
+          </div>
+          {/* The full description and the catch. Shut = zero height (grid row 0fr); open = exactly as tall as the text (1fr), so there is no blank space. */}
           <div
             className={cn(
               "grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none",
@@ -422,38 +496,56 @@ const EntryRow = memo(function EntryRow({ entry, onOpenFeedback }: { entry: Entr
           >
             <div className="min-h-0 overflow-hidden">
               <div className="pt-3">
-                <p className="leading-relaxed text-ink-secondary">{entry.summary}</p>
+                <p className="leading-relaxed text-ink-secondary">{row.summary}</p>
                 <p className="mt-3 text-sm leading-relaxed">
                   <span className="font-semibold">The catch: </span>
-                  <span className="text-ink-secondary">{entry.theCatch}</span>
+                  <span className="text-ink-secondary">{row.theCatch}</span>
                 </p>
-                <button
-                  type="button"
-                  onClick={(event) => onOpenFeedback(entry, event.currentTarget)}
-                  className="mt-3 inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-line-strong bg-surface-raised px-3 text-xs font-medium text-ink-primary transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
-                >
-                  <MessagesSquare className="size-3.5" aria-hidden="true" />
-                  See user feedback{count > 0 ? ` (${count})` : ""}
-                  <span className="sr-only"> for {entry.name}</span>
-                </button>
+                {row.free ? (
+                  <p className="mt-2 text-sm leading-relaxed">
+                    <span className="font-semibold">Free to use: </span>
+                    <span className="text-ink-secondary">no paid plan, membership or usage limit found.</span>
+                  </p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(event) => onOpenFeedback(entry, event.currentTarget)}
+                    className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-line-strong bg-surface-raised px-3 text-xs font-medium text-ink-primary transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+                  >
+                    <MessagesSquare className="size-3.5" aria-hidden="true" />
+                    See user feedback{ratings > 0 ? ` (${ratings})` : ""}
+                    <span className="sr-only"> for {entry.name}</span>
+                  </button>
+                  <a
+                    href={entry.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full bg-action px-3.5 text-xs font-semibold text-action-ink transition-colors hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+                  >
+                    Visit website
+                    <ArrowUpRight className="size-3.5" aria-hidden="true" />
+                    <span className="sr-only"> {entry.name} (opens in a new tab)</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         </div>
         <div className="flex flex-col gap-4 sm:items-start">
-          <EntryActions name={entry.name} average={average} count={count} />
+          <EntryActions name={entry.name} average={average} count={ratings} />
           <dl className="flex gap-8 text-sm">
             <div>
-              <dt className="text-ink-muted">My score</dt>
+              <dt className="text-ink-muted">{score.label}</dt>
               <dd className="font-semibold tabular-nums">
-                {entry.score}
+                {score.value}
                 <span className="font-normal text-ink-muted"> / 20</span>
               </dd>
             </div>
             <div>
-              <dt className="text-ink-muted">Tested on</dt>
+              <dt className="text-ink-muted">Checked on</dt>
               <dd>
-                <time dateTime={entry.testedOn}>{formatDate(entry.testedOn)}</time>
+                <time dateTime={entry.checkedOn}>{formatDate(entry.checkedOn)}</time>
               </dd>
             </div>
           </dl>

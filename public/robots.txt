@@ -1,0 +1,6 @@
+# Search engines may read the pages. The page-view counter (/api/) is not a page, so it is asked to stay out.
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://site-library.codingcrux0.workers.dev/sitemap.xml

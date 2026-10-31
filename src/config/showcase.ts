@@ -20,9 +20,9 @@ type ShowcaseCard = {
 };
 
 export const SHOWCASE: ShowcaseCard[] = [
-  { scene: "tested", title: "Tested by hand", caption: "Every site is tried by a real person, and dated.", tint: "bg-tint-sky" },
+  { scene: "tested", title: "Reviewed and dated", caption: "Every site is read through, and the day it was checked is shown.", tint: "bg-tint-sky" },
   { scene: "catch", title: "The catch, up front", caption: "The limit or the paywall, in plain words.", tint: "bg-tint-sand" },
-  { scene: "scores", title: "Two separate scores", caption: "My score and the community score, never mixed.", tint: "bg-tint-sage" },
+  { scene: "scores", title: "Two separate scores", caption: "Our score and the community score, never mixed.", tint: "bg-tint-sage" },
   { scene: "compare", title: "Compare side by side", caption: "Put two or three tools next to each other.", tint: "bg-tint-lilac" },
   { scene: "pick", title: "Pick for me", caption: "Three quick questions, three picks, with reasons.", tint: "bg-tint-sand" },
   { scene: "search", title: "Instant search", caption: "Find a tool fast, with a keyboard shortcut.", tint: "bg-tint-sky" },

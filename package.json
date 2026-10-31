@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "dev:demo": "PUBLIC_DEMO_FEEDBACK=1 astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "local": "astro build && node scripts/local-server.mjs",

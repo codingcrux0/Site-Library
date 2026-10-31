@@ -4,15 +4,16 @@ import type { TagGroup } from "@/config/tags";
 import { cn } from "@/lib/utils";
 
 /*
- * "Filter by type": a button that opens a small panel with a search box and tick boxes (React, CSS, Java...).
- * It only shows the choices; the page owns which ones are picked. Picking more than one means "any of them".
+ * "Filter by type": a button that opens a small panel with a search box and tick boxes (React, CSS, Charts...).
+ * It only shows the choices that have at least one website (with how many), the most common first; the page owns which ones are picked.
+ * Picking more than one means "any of them".
  * Closes with Escape (focus goes back to the button), when you click elsewhere, or when focus moves out of the panel.
  * The tick boxes are real checkboxes, so keyboard and screen readers work without extra code.
  */
 
 interface TypeFilterProps {
   groups: TagGroup[];
-  /** How many sites carry each tag (a missing tag counts as 0). */
+  /** How many sites carry each tag (a missing tag counts as 0, and is not offered). */
   counts: Map<string, number>;
   picked: string[];
   onToggle: (tag: string) => void;
@@ -51,9 +52,16 @@ export function TypeFilter({ groups, counts, picked, onToggle, onClear }: TypeFi
     };
   }, [open]);
 
+  // Only types that some website has right now (a ticked one always stays, so it can be unticked), the most common first.
+  // Array.sort keeps the written order for equal counts, so the list does not shuffle between equal types.
   const needle = text.trim().toLowerCase();
   const visible = groups
-    .map((group) => ({ ...group, tags: group.tags.filter((tag) => tag.toLowerCase().includes(needle)) }))
+    .map((group) => ({
+      ...group,
+      tags: group.tags
+        .filter((tag) => tag.toLowerCase().includes(needle) && ((counts.get(tag) ?? 0) > 0 || picked.includes(tag)))
+        .sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0)),
+    }))
     .filter((group) => group.tags.length > 0);
 
   return (
@@ -111,11 +119,11 @@ export function TypeFilter({ groups, counts, picked, onToggle, onClear }: TypeFi
 
           <div className="mt-2 max-h-64 overflow-y-auto overscroll-y-contain [scrollbar-width:thin]">
             {visible.length === 0 ? (
-              <p className="px-2 py-3 text-sm text-ink-secondary">No type matches that.</p>
+              <p className="px-2 py-3 text-sm text-ink-secondary">{needle ? "No type matches that." : "No types to pick here yet."}</p>
             ) : (
               visible.map((group) => (
                 <div key={group.category} role="group" aria-label={group.category} className="pb-1">
-                  {groups.length > 1 ? (
+                  {visible.length > 1 ? (
                     <div className="px-2 pt-2 pb-1 text-[11px] font-medium tracking-[0.1em] text-ink-muted uppercase">{group.category}</div>
                   ) : null}
                   {group.tags.map((tag) => {

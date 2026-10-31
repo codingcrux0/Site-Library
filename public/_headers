@@ -1,12 +1,18 @@
 # Extra response headers, applied by Cloudflare to every file (public/ is copied into dist/ by the build).
-# Safe, standard ones only. A Content-Security-Policy is NOT here yet: Astro writes small inline scripts,
-# so it needs hashes, and a wrong policy would silently break the page. It is on the to-do list (CONTEXT.md).
+# Safe, standard ones only. The main Content Security Policy (which scripts may run) is NOT here: Astro writes it into a <meta> tag on
+# every page at build time, with a fingerprint of each script (see "security" in astro.config.mjs). A <meta> tag cannot say
+# frame-ancestors (who may put this site in a frame), so that one directive lives here. The two policies add together.
+# Strict-Transport-Security tells browsers to use https only for a year (this site is https only anyway; no includeSubDomains/preload on purpose,
+# those are hard to undo). Cross-Origin-Opener-Policy keeps other websites' windows from reaching this one.
 
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Strict-Transport-Security: max-age=31536000
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Security-Policy: frame-ancestors 'self'
 
 # Build files have fingerprinted names (the name changes when the content does), so browsers can keep them for a year.
 /_astro/*

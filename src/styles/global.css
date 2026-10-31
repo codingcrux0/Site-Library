@@ -2,6 +2,7 @@
 @import "./hero.css";
 @import "./reveal.css";
 @import "./scenes.css";
+@import "./drop.css";
 
 /* Tailwind's dark: classes (used by the Wensity star rating) follow THIS site's dark switch (the moon button) and a dark colour picked on
    the colour wheel, not the computer's own dark setting. Without this the stars would draw their dark styles on a bright page. */

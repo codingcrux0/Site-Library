@@ -455,121 +455,16 @@
     transform: translateX(4cqw);
   }
 
-  /* ---------- devtools (a terminal) ---------- */
-  .sc-term {
-    width: 76cqw;
-    gap: 0;
-    padding: 0;
-    overflow: hidden;
-    border-color: transparent;
-    background: var(--ink-primary);
-    color: #fff;
-  }
-  .sc-term .sc-dots {
-    border-bottom-color: rgba(255, 255, 255, 0.12);
-  }
-  .sc-term .sc-dots i {
-    background: rgba(255, 255, 255, 0.28);
-  }
-  .sc-term .sc-bar {
-    background: rgba(255, 255, 255, 0.35);
-  }
+  /* A column of grey lines, used inside several scenes. */
   .sc-lines {
     display: flex;
     flex: 1;
     flex-direction: column;
     gap: 3cqw;
   }
-  .sc-term .sc-lines {
-    padding: 4cqw 4cqw 6cqw;
-  }
-  .sc-prompt {
-    width: 3cqw;
-    font-size: max(8px, 3.2cqw);
-    color: var(--tint-sage);
-  }
-  .sc-term .sc-ok {
-    background: var(--tint-sage);
-    color: var(--ink-primary);
-  }
-  .sc-cursor {
-    width: 1.2cqw;
-    height: 3.6cqw;
-    background: #fff;
-  }
 
-  /* ---------- productivity (a task board) ---------- */
-  .sc-board {
-    position: relative;
-    display: flex;
-    gap: 3cqw;
-    width: 80cqw;
-  }
-  .sc-lane {
-    flex: 1;
-    width: auto;
-    gap: 2.5cqw;
-    min-height: 40cqw;
-    padding: 3cqw;
-    border-radius: 3.2cqw;
-  }
-  .sc-slot {
-    display: block;
-    height: 9cqw;
-    border: 1px solid rgba(11, 13, 16, 0.07);
-    border-radius: 2cqw;
-    background: var(--tint-sand);
-  }
-  .sc-slot--done {
-    background: var(--tint-sage);
-  }
   /* Sits exactly on top of the first "To do" slot, then travels two lanes to the right. */
-  .sc-mover {
-    position: absolute;
-    top: 9.5cqw;
-    left: 3cqw;
-    width: 18.7cqw;
-    height: 9cqw;
-    border: 1px solid rgba(11, 13, 16, 0.1);
-    border-radius: 2cqw;
-    background: var(--ink-primary);
-  }
 
-  /* ---------- ai (a chat) ---------- */
-  .sc-bubble {
-    display: flex;
-    gap: 2.4cqw;
-    padding: 3cqw;
-    border-radius: 3cqw;
-  }
-  .sc-bubble--me {
-    align-self: flex-end;
-    width: 56cqw;
-    background: var(--tint-sky);
-  }
-  .sc-bubble--ai {
-    align-items: flex-start;
-    background: var(--tint-lilac);
-  }
-  .sc-bubble svg {
-    flex: none;
-    width: 4cqw;
-    height: 4cqw;
-  }
-  .sc-bubble .sc-lines {
-    gap: 2cqw;
-  }
-  .sc-thinking {
-    display: flex;
-    gap: 1.6cqw;
-    padding-left: 3cqw;
-  }
-  .sc-think {
-    width: 2.2cqw;
-    height: 2.2cqw;
-    border-radius: 50%;
-    background: rgba(11, 13, 16, 0.4);
-  }
 
   /* ---------- when the animations run ---------- */
   /* Home page: wait until the box is on screen, and stop again once the next box covers it. */
@@ -581,6 +476,99 @@
   }
   [data-covered] .sc {
     --sc-state: paused;
+  }
+
+  /* ---------- graphics (a turning cube) and video (a timeline) ---------- */
+  .sc-cube-wrap {
+    display: grid;
+    place-items: center;
+    height: 30cqw;
+    perspective: 70cqw;
+  }
+  .sc-cube {
+    position: relative;
+    width: 14cqw;
+    height: 14cqw;
+    transform-style: preserve-3d;
+    transform: rotateX(-22deg) rotateY(35deg);
+  }
+  .sc-cube i {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(11, 13, 16, 0.12);
+    border-radius: 1.2cqw;
+    background: var(--tint-sky);
+  }
+  .sc-cube i:nth-child(1) {
+    transform: translateZ(7cqw);
+  }
+  .sc-cube i:nth-child(2) {
+    transform: rotateY(90deg) translateZ(7cqw);
+    background: var(--tint-sand);
+  }
+  .sc-cube i:nth-child(3) {
+    transform: rotateY(180deg) translateZ(7cqw);
+    background: var(--tint-sage);
+  }
+  .sc-cube i:nth-child(4) {
+    transform: rotateY(-90deg) translateZ(7cqw);
+    background: var(--tint-lilac);
+  }
+  .sc-cube i:nth-child(5) {
+    transform: rotateX(90deg) translateZ(7cqw);
+    background: var(--tint-sand);
+  }
+  .sc-cube i:nth-child(6) {
+    transform: rotateX(-90deg) translateZ(7cqw);
+    background: var(--tint-sage);
+  }
+  .sc-reel {
+    display: flex;
+    flex-direction: column;
+    gap: 3cqw;
+    padding: 3.5cqw;
+  }
+  .sc-preview {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 20cqw;
+    border: 1px solid rgba(11, 13, 16, 0.07);
+    border-radius: 2cqw;
+    background: var(--tint-sage);
+  }
+  .sc-play {
+    width: 0;
+    height: 0;
+    margin-left: 1cqw;
+    border-top: 2.6cqw solid transparent;
+    border-bottom: 2.6cqw solid transparent;
+    border-left: 4.4cqw solid var(--ink-primary);
+  }
+  .sc-timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8cqw;
+    padding: 1.4cqw 0;
+  }
+  .sc-clip {
+    display: block;
+    width: var(--w);
+    height: 3.6cqw;
+    margin-left: var(--l);
+    border: 1px solid rgba(11, 13, 16, 0.07);
+    border-radius: 1cqw;
+    background: var(--tint);
+  }
+  .sc-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0.7cqw;
+    border-radius: 1cqw;
+    background: var(--ink-primary);
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -613,11 +601,11 @@
         sc-reveal 8s linear infinite var(--sc-state, running),
         sc-blink 1s steps(1) infinite var(--sc-state, running);
     }
-    .sc-move {
-      animation: sc-move 8s var(--sc-ease) infinite var(--sc-state, running);
+    .sc-cube {
+      animation: sc-spin 14s linear infinite var(--sc-state, running);
     }
-    .sc-cursor {
-      animation: sc-blink 1s steps(1) infinite var(--sc-state, running);
+    .sc-playhead {
+      animation: sc-playhead 6s linear infinite var(--sc-state, running);
     }
     .sc-knob {
       animation: sc-knob 5s var(--sc-ease) infinite var(--sc-state, running);
@@ -635,6 +623,19 @@
       animation-fill-mode: backwards;
     }
 
+    @keyframes sc-spin {
+      to {
+        transform: rotateX(-22deg) rotateY(395deg);
+      }
+    }
+    @keyframes sc-playhead {
+      from {
+        transform: translateX(0);
+      }
+      to {
+        transform: translateX(68cqw);
+      }
+    }
     @keyframes sc-pop {
       0%,
       5% {
@@ -770,23 +771,6 @@
       }
     }
     /* Rests in "To do", slides across to "Done", then fades and starts again. */
-    @keyframes sc-move {
-      0%,
-      12% {
-        opacity: 1;
-        transform: translateX(0);
-      }
-      42%,
-      86% {
-        opacity: 1;
-        transform: translateX(55.3cqw);
-      }
-      94%,
-      100% {
-        opacity: 0;
-        transform: translateX(55.3cqw);
-      }
-    }
     @keyframes sc-knob {
       0%,
       35% {

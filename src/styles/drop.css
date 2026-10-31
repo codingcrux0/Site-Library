@@ -1,0 +1,33 @@
+/*
+ * The entrance of the list page: when you arrive (from the home page or any other way), the words, boxes and rows DROP in from just above
+ * their place, one after another, with a small settle at the end.
+ *
+ * How to use it: put class "drop" on an element and give it a start delay with style="--d: 300" (milliseconds). "drop-far" travels further
+ * (the big heading words). Pure CSS, no script: only transform and opacity change, so the graphics chip animates it with no layout work.
+ *
+ * - The "both" fill keeps an element hidden while it waits for its delay (nothing flashes, nothing jumps) and leaves it in place at the end.
+ * - "Reduce motion": the animation is not applied at all, so everything simply shows.
+ * - The list island removes these classes from its own parts shortly after the entrance (LibraryPage.tsx), so rows that appear LATER
+ *   (a new page, tab or category) do not drop again.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .drop,
+  .drop-far {
+    --drop-y: -1.75rem;
+    animation: drop-in 0.8s cubic-bezier(0.34, 1.4, 0.64, 1) calc(var(--d, 0) * 1ms) both;
+  }
+  .drop-far {
+    --drop-y: -3.5rem;
+    animation-duration: 0.95s;
+  }
+  @keyframes drop-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, var(--drop-y), 0) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
