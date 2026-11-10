@@ -212,10 +212,11 @@ test("a colourful pick really changes the page colour, the boxes and the borders
     if (picked.s < 50 || picked.v < 40 || pickIsDark(hex)) continue;
     const t = deriveTheme(hex);
     checked.push(hex);
-    assert.ok(awayFromWhite(t["--surface-base"]) >= 12, `${hex}: page ${t["--surface-base"]} looks white`);
-    assert.ok(awayFromWhite(t["--surface-raised"]) >= 4, `${hex}: boxes ${t["--surface-raised"]} look white`);
+    // The page is a gentle mix (D41), so even the weakest colourful pick only has to be a few steps off white; vivid picks go further.
+    assert.ok(awayFromWhite(t["--surface-base"]) >= 4, `${hex}: page ${t["--surface-base"]} looks white`);
+    assert.ok(awayFromWhite(t["--surface-raised"]) >= 1, `${hex}: boxes ${t["--surface-raised"]} look white`);
     assert.ok(awayFromWhite(t["--surface-sunken"]) > awayFromWhite(t["--surface-base"]), `${hex}: sunken is not deeper than the page`);
-    assert.ok(awayFromWhite(t["--border-subtle"]) >= 20, `${hex}: border ${t["--border-subtle"]} is not tinted`);
+    assert.ok(awayFromWhite(t["--border-subtle"]) >= 12, `${hex}: border ${t["--border-subtle"]} is not tinted`);
   }
   assert.ok(checked.length > 200, "not enough colourful picks were tried");
 });
@@ -224,6 +225,55 @@ test("the page tint gets stronger the more colourful the pick is", () => {
   const strength = (hex) => awayFromWhite(deriveTheme(hex)["--surface-base"]);
   assert.ok(strength("#ff2d6f") > strength("#c98a9a"), "a vivid pink should tint more than a dull pink");
   assert.ok(strength("#c98a9a") > strength("#999999"));
+});
+
+// The blend (D41): the page is the pick MIXED into white, not a flat wash of it. Before, a rose pick turned the whole page hot pink.
+const hueGap = (a, b) => {
+  const gap = Math.abs(rgbToHsv(parseHex(a)).h - rgbToHsv(parseHex(b)).h);
+  return Math.min(gap, 360 - gap);
+};
+const colourful = (hex) => {
+  const picked = rgbToHsv(parseHex(hex));
+  return picked.s >= 50 && picked.v >= 40 && !pickIsDark(hex);
+};
+
+test("the page is a gentle blend of the pick and white, never a flat flood of the pick", () => {
+  for (const hex of allHexes) {
+    if (pickIsDark(hex)) continue;
+    const t = deriveTheme(hex);
+    assert.ok(awayFromWhite(t["--surface-base"]) <= 24, `${hex}: page ${t["--surface-base"]} is too strong`);
+    assert.ok(awayFromWhite(t["--surface-sunken"]) <= 34, `${hex}: sunken ${t["--surface-sunken"]} is too strong`);
+  }
+});
+
+test("the page and boxes keep the hue of the pick (a true mix, not a different colour)", () => {
+  // A colour only a few steps off white has no real hue left once it is rounded to whole steps, so only tints with at least 10 steps of
+  // colour in them are measured.
+  const chroma = (hex) => Math.max(...Object.values(parseHex(hex))) - Math.min(...Object.values(parseHex(hex)));
+  let checked = 0;
+  for (const hex of randomHexes) {
+    if (!colourful(hex)) continue;
+    const t = deriveTheme(hex);
+    for (const name of ["--surface-base", "--surface-sunken", "--border-strong"]) {
+      if (chroma(t[name]) < 10) continue;
+      checked++;
+      assert.ok(hueGap(hex, t[name]) <= 6, `${hex}: ${name} ${t[name]} drifted from the hue`);
+    }
+  }
+  assert.ok(checked > 200, "not enough tints were measured");
+});
+
+test("the four category boxes are neighbours of the pick on the colour wheel (within 55 degrees), so they blend instead of clashing", () => {
+  let checked = 0;
+  for (const hex of randomHexes) {
+    if (!colourful(hex)) continue;
+    const t = deriveTheme(hex);
+    checked++;
+    for (const name of ["--tint-sky", "--tint-sand", "--tint-sage", "--tint-lilac"]) {
+      assert.ok(hueGap(hex, t[name]) <= 55, `${hex}: ${name} ${t[name]} is ${hueGap(hex, t[name]).toFixed(0)} degrees away`);
+    }
+  }
+  assert.ok(checked > 200);
 });
 
 test("a white or mid-grey pick keeps the original white page", () => {

@@ -77,6 +77,12 @@ function hslHex(h: number, s: number, l: number): string {
   return toHex({ r: (r + m) * 255, g: (g + m) * 255, b: (b + m) * 255 });
 }
 
+// Mixes a colour into white: 0 gives white, 1 gives the colour itself. The hue never changes, the page just gets a hint of it.
+function mixIntoWhite(colour: Rgb, amount: number): string {
+  const part = (c: number) => 255 - (255 - c) * amount;
+  return toHex({ r: part(colour.r), g: part(colour.g), b: part(colour.b) });
+}
+
 // ---------- contrast (WCAG 2: text needs at least 4.5 to 1 against what is behind it) ----------
 
 function luminance({ r, g, b }: Rgb): number {
@@ -205,6 +211,11 @@ function deriveDarkTheme(picked: Rgb): ThemeVars {
   };
 }
 
+// A pale box colour: the pure colour at this hue (turned `shift` degrees from the pick), mixed a little into white.
+function neighbourTint(hue: number, shift: number, vivid: number): string {
+  return mixIntoWhite(parseHex(hslHex(hue + shift, 1, 0.5))!, 0.13 * vivid);
+}
+
 /** Makes the whole palette from one picked colour. Returns null if the colour is not a valid hex colour. */
 export function deriveTheme(hex: string): ThemeVars | null {
   const picked = parseHex(hex);
@@ -215,13 +226,13 @@ export function deriveTheme(hex: string): ThemeVars | null {
   const pickedHsv = rgbToHsv(picked);
   const vivid = (pickedHsv.s / 100) * Math.min(1, Math.max(0, (pickedHsv.v - 10) / 40));
 
-  // Page colours. The page, the boxes and the borders all take the picked hue; the stronger (more colourful) the pick, the deeper the
-  // tint. They are always light, so the site stays bright and the text stays readable: a grey, white or black pick keeps the white page.
-  // (An exact mid-tone background could not hold readable text, so the page uses a light version of the picked colour.)
-  const surfaceBase = hslHex(h, 1, 1 - 0.09 * vivid);
-  const surfaceRaised = hslHex(h, 1, 1 - 0.035 * vivid);
-  const surfaceSunken = hslHex(h, 1, 1 - 0.125 * vivid);
-  const surfaceBrandSubtle = hslHex(h, 1, 1 - 0.16 * vivid);
+  // Page colours. The page, the boxes and the borders are the picked colour MIXED into white (a blend, not a flood): the more colourful the
+  // pick, the more of it is mixed in. They are always light, so the site stays bright and the text stays readable: a grey, white or black
+  // pick keeps the white page. (An exact mid-tone background could not hold readable text, so the page uses a light mix of the colour.)
+  const surfaceBase = mixIntoWhite(picked, 0.09 * vivid);
+  const surfaceRaised = mixIntoWhite(picked, 0.035 * vivid);
+  const surfaceSunken = mixIntoWhite(picked, 0.125 * vivid);
+  const surfaceBrandSubtle = mixIntoWhite(picked, 0.16 * vivid);
   const lightSurfaces = [surfaceBase, surfaceRaised, surfaceSunken, surfaceBrandSubtle];
 
   // The accent (buttons, pills, active tab) keeps the picked hue but is darkened until white text on it is readable.
@@ -237,8 +248,8 @@ export function deriveTheme(hex: string): ThemeVars | null {
     "--surface-raised": surfaceRaised,
     "--surface-sunken": surfaceSunken,
     "--surface-brand-subtle": surfaceBrandSubtle,
-    "--border-subtle": hslHex(h, 0.7 * vivid, 0.9 - 0.08 * vivid),
-    "--border-strong": hslHex(h, 0.6 * vivid, 0.8 - 0.1 * vivid),
+    "--border-subtle": mixIntoWhite(picked, 0.3 * vivid),
+    "--border-strong": mixIntoWhite(picked, 0.5 * vivid),
     "--ink-primary": hslHex(h, 0.35 * vivid, 0.06),
     "--ink-secondary": hslHex(h, 0.25 * vivid, 0.28),
     "--ink-muted": hslHex(h, 0.2 * vivid, 0.33),
@@ -247,11 +258,12 @@ export function deriveTheme(hex: string): ThemeVars | null {
     "--action-primary-hover": accentHover,
     "--action-primary-ink": "#ffffff",
     "--focus-ring": brand,
-    // The four category boxes: four neighbouring hues of the pick.
-    "--tint-sky": hslHex(h, 0.5 * vivid, 0.935),
-    "--tint-sand": hslHex(h + 35, 0.5 * vivid, 0.935),
-    "--tint-sage": hslHex(h - 35, 0.5 * vivid, 0.935),
-    "--tint-lilac": hslHex(h + 70, 0.5 * vivid, 0.935),
+    // The four category boxes: the pick and three close neighbours on the colour wheel (within 50 degrees), each mixed into white the same
+    // way, so the boxes blend with the page and with each other instead of showing four different colours.
+    "--tint-sky": neighbourTint(h, 0, vivid),
+    "--tint-sand": neighbourTint(h, 25, vivid),
+    "--tint-sage": neighbourTint(h, -25, vivid),
+    "--tint-lilac": neighbourTint(h, 50, vivid),
   };
 }
 

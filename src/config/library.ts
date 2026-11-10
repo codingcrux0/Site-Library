@@ -63,6 +63,7 @@ export type Entry = {
 };
 
 const DAY = "2026-10-31";
+const DAY_NOV10 = "2026-11-10";
 
 export const ENTRIES: Entry[] = [
   // ---- UI Components ----
@@ -540,6 +541,103 @@ export const ENTRIES: Entry[] = [
       },
     ],
   },
+  {
+    id: "originkit",
+    name: "Originkit",
+    url: "https://originkit.dev",
+    summary: "A free library of 805 animated components you copy into React, Next.js and Tailwind projects (or Framer), with a live variable editor, an AI editor and an MCP server for AI tools.",
+    theCatch: "No licence, source repository or update date is shown, ads (\"Advertise on OriginKit\") sit on the pages, and there is a Login button the pages read do not explain.",
+    checkedOn: DAY_NOV10,
+    placements: [
+      {
+        category: "UI Components",
+        tags: ["React", "Next.js", "Tailwind CSS", "Animation", "Copy and paste"],
+        marks: [3, 3, 4, 3],
+        score: 13,
+      },
+      {
+        category: "Motion & Animation",
+        tags: ["Animated components", "React"],
+        marks: [3, 3, 4, 3],
+        score: 13,
+        summary: "805 components that come already animated (shaders, scenes, buttons, wordmarks), with their timing, easing and stagger editable in a live preview before you copy them.",
+      },
+    ],
+  },
+  {
+    id: "pin-ui",
+    name: "Pin UI",
+    url: "https://pinui.xyz",
+    summary: "A free, open-source library of UI components rebuilt from Pinterest designs, plus Blocx page sections (heroes, pricing tables, footers), added one at a time with the shadcn command.",
+    theCatch: "The README says MIT but GitHub shows no licence file, and it excludes the Pin UI name, logo and demo media; the site itself shows no install steps, component count or update date, and its waitlist page does not say what it is for.",
+    checkedOn: DAY_NOV10,
+    placements: [
+      {
+        category: "UI Components",
+        tags: ["React", "Next.js", "Animation", "Blocks", "Open source"],
+        marks: [2, 5, 4, 5],
+        score: 16,
+        free: { marks: [2, 4, 4, 5], score: 15 },
+      },
+    ],
+  },
+  {
+    id: "skiper-ui",
+    name: "Skiper UI",
+    url: "https://skiper-ui.com",
+    summary: "About 100 animated React components, many of them recreations of effects from other websites, added with the shadcn command; the free ones copy straight in.",
+    theCatch: "The free components must credit Skiper UI wherever you use them, Pro costs $129 once (a $549 tier is marked coming soon), no source repository is linked, and the author says many components recreate other people's work.",
+    checkedOn: DAY_NOV10,
+    placements: [
+      {
+        category: "UI Components",
+        tags: ["React", "shadcn/ui", "Tailwind CSS", "Animation", "Copy and paste"],
+        marks: [3, 4, 4, 5],
+        score: 16,
+      },
+      {
+        category: "Motion & Animation",
+        tags: ["Animated components", "React"],
+        marks: [3, 4, 4, 5],
+        score: 16,
+        summary: "Animated components built on framer-motion and GSAP, from scroll and cursor effects to a walking crowd, with a live preview for each.",
+      },
+    ],
+  },
+  {
+    id: "beautiful-ui",
+    name: "Beautiful UI",
+    url: "https://www.beautifului.dev",
+    summary: "Twenty-one free copy-paste components for AI-agent screens, such as streaming text, thinking traces, approval cards, tool chips and chat, under the MIT licence.",
+    theCatch: "It covers AI-agent screens only, it shows no install steps, repository, tech stack or update date, and the page is a design studio's showcase with a \"Book a call\" button.",
+    checkedOn: DAY_NOV10,
+    placements: [
+      {
+        category: "UI Components",
+        tags: ["AI interfaces", "Copy and paste", "AI"],
+        marks: [2, 5, 3, 3],
+        score: 13,
+        free: { marks: [2, 4, 5, 3], score: 14 },
+      },
+    ],
+  },
+  {
+    id: "layro",
+    name: "Layro",
+    url: "https://layro.dev",
+    summary: "A marketplace of reviewed React components from many authors (heroes, charts, text effects, backgrounds) that your coding agent installs over MCP, or you copy from the site.",
+    theCatch: "It is free but you must sign in to see the full catalogue and copy code, and no licence terms, source repository or update dates are shown for the components.",
+    checkedOn: DAY_NOV10,
+    placements: [
+      {
+        category: "UI Components",
+        tags: ["React", "Blocks", "Animation", "AI", "Copy and paste"],
+        marks: [3, 4, 4, 5],
+        score: 16,
+      },
+    ],
+  },
+
   // ---- Motion & Animation ----
   {
     id: "60fps",
@@ -702,6 +800,30 @@ export const ENTRIES: Entry[] = [
       },
     ],
   },
+  {
+    id: "animmaster-lib",
+    name: "Animmaster Lib",
+    url: "https://animmasterlib.dev",
+    summary: "A paid pack of 300 animated components rebuilt from well-known websites (scroll, hero, 3D, shader and text animations), mostly HTML, CSS and JavaScript with some React and Next.js.",
+    theCatch: "Nothing is free: at the sale prices shown on 10 November 2026 the packs cost $3, $4.99 (PRO) and $8 (Premium), only Premium gets future updates, files arrive as a Google Drive download, and no licence terms are shown.",
+    checkedOn: DAY_NOV10,
+    placements: [
+      {
+        category: "Motion & Animation",
+        tags: ["Animated components", "Scroll effects", "Hero sections", "Text effects", "Transitions"],
+        marks: [3, 1, 3, 5],
+        score: 12,
+      },
+      {
+        category: "Templates & Assets",
+        tags: ["Templates", "Starters"],
+        marks: [2, 1, 3, 5],
+        score: 11,
+        summary: "The packs also carry 63 Figma mockups (Junior), and a Vite starter and a portfolio website (Premium), beside the animated components.",
+      },
+    ],
+  },
+
   // ---- 3D & Graphics ----
   {
     id: "three-js",

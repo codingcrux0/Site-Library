@@ -512,3 +512,10 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 - First attempt used `pointerover`, which also fires when the page shifts under a resting pointer; it blurred the focus the feedback box had just handed back. Switched to `pointermove` and re-ran: fixed.
 - 131 of 131 tests pass, type check 0 errors, build OK, gitleaks clean, `.env` not tracked.
 - Not tested: a real phone (touch has no hover), Safari, Firefox, a screen reader.
+
+## 2026-11-10 — six websites (D41) and the colour blend (D42)
+- Websites: the existing data guards were the check (marks add up, free score exists exactly when free tier is 5, tags exist, no duplicate ids or addresses). Built site: "Now listing 80 websites", list shows 80, Originkit present.
+- Colour blend: three new tests written first and seen to FAIL (a red pick gave a page 46 steps off white; a purple pick gave a box 68 degrees from the pick). After the change they pass. Two old thresholds were loosened on purpose (see D42). The hue test only measures tints with 10 or more steps of colour, because 8-bit rounding leaves nothing to measure below that.
+- 134 of 134 tests pass, type check 0 errors, build OK, gitleaks clean, `.env` ignored (only `.env.example` is tracked).
+- Screenshots of the built site at blue, rose, green and orange picks, before and after: the page is a pale tint and the buttons keep the full colour. Home and list page looked right for rose and green.
+- Not tested: the four category boxes by eye (they appear on scroll; only their hue and readability are tested), the drag of the picker in a real browser, a real phone, Safari, Firefox.

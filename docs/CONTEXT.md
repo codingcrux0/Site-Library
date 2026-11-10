@@ -8,7 +8,10 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
-## One row open at a time (2026-10-31, newest, D40)
+## Six websites and a softer colour wheel (2026-11-10, newest, D41 and D42)
+80 websites, 102 placements (UI 32, Motion 18, 3D 7, Video & Audio 10, Design Inspiration 12, Templates & Assets 12, Tools 11); Best for free 36. Added Originkit, Pin UI, Skiper UI, Beautiful UI, Layro and Animmaster Lib (evidence `docs/drafts/grades-2026-11-10.md`). The colour wheel now mixes the pick into white instead of flooding the page with it (`src/lib/theme.ts`). Accounts and bookmarks are still not built: the legal gate comes first (see the login plan given to the owner).
+
+## One row open at a time (2026-10-31, D40)
 Hovering a second website's row while the first was still open left both open: a click had left keyboard focus in the first row (and its sign-in prompt) holding it open. Fixed with two small listeners that react to the pointer moving onto a different row; keyboard behaviour unchanged. See D40.
 
 ## Four more websites (2026-10-31, D39)
