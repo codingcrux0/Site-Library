@@ -477,3 +477,7 @@ Search round (2026-10-30): removed the sidebar's unused "disabled" option and st
 **Change (`src/lib/theme.ts` only):** the surfaces and borders are now the pick MIXED into white (same hue, about half the old strength; the more colourful the pick, the more is mixed in), and the four boxes are the pick plus neighbours within 50 degrees, mixed the same way. The accent (buttons, active tab), the text colours, the dark pick and dark mode are unchanged.
 **Tests first:** three new tests (page never a flat flood, hue kept, boxes within 55 degrees) failed against the old rules; then the rules were changed. Two older thresholds that described the old strength were loosened on purpose (page must be 4 or more steps off white, was 12; borders 12, was 20), with the reason written in the test. The readability tests (4.5 to 1 on every surface, 2,000 random picks) pass unchanged.
 **To undo:** one commit; the old numbers are in git history.
+
+## D43. Sign-in plan: Google and GitHub only (2026-11-10)
+**Owner decided:** sign in with Google and GitHub only, no passwords. Supabase Auth (already chosen in D1) does the sign-in; bookmarks live in one table protected by row-level security. Full threat model, tests-first list and the owner's steps are in `docs/AUTH-PLAN.md`.
+**Not built.** It waits for: the owner's yes to the new `/sign-in` look, the one new dependency (`@supabase/supabase-js`) and two Supabase projects; the OAuth apps; and the LEGAL GATE before real people sign in. The email and password views on `/sign-in` will go when it is built.
