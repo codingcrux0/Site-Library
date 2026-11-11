@@ -17,7 +17,8 @@ select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-1111111
 insert into public.reviews (site_id, body) values ('originkit', 'Clear and quick, it did what I needed.');
 
 do $$ declare refused boolean; begin   -- an ordinary person can do none of the owner's things
-  if public.is_owner() then raise exception 'FAIL: an ordinary person is an owner'; end if;
+  begin perform public.is_owner(); exception when insufficient_privilege then refused := true; end;
+  if not refused then raise exception 'FAIL: a signed-in person could call is_owner directly (only the owner functions may use it)'; end if;
   refused := false;
   begin perform * from public.owner_reviews(); exception when insufficient_privilege then refused := true; end;
   if not refused then raise exception 'FAIL: an ordinary person could list every review'; end if;
@@ -49,7 +50,7 @@ select set_config('request.jwt.claims', '{"role":"anon"}', true);
 do $$ declare refused boolean; begin
   refused := false;
   begin perform public.is_owner(); exception when insufficient_privilege then refused := true; end;
-  if not refused then raise exception 'FAIL: a signed-out visitor could ask who is the owner'; end if;
+  if not refused then raise exception 'FAIL: a signed-out visitor could call is_owner'; end if;
   refused := false;
   begin perform * from public.owner_reviews(); exception when insufficient_privilege then refused := true; end;
   if not refused then raise exception 'FAIL: a signed-out visitor could list the reviews'; end if;
@@ -70,7 +71,9 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 
 do $$ declare refused boolean := false; begin
-  if not public.is_owner() then raise exception 'FAIL: the owner was not recognised'; end if;
+  begin perform public.is_owner(); exception when insufficient_privilege then refused := true; end;   -- even the owner cannot call it directly
+  if not refused then raise exception 'FAIL: the owner could call is_owner directly'; end if;
+  refused := false;
   if (select count(*) from public.owner_reviews()) <> 1 then raise exception 'FAIL: the owner should see the one review'; end if;
   if (select author from public.owner_reviews()) <> 'person-a@test.invalid' then raise exception 'FAIL: the owner cannot see who wrote the review'; end if;
   if (select approved from public.owner_reviews()) then raise exception 'FAIL: the waiting review shows as approved'; end if;
@@ -132,8 +135,9 @@ end $$;
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
-do $$ begin
-  if public.is_owner() then raise exception 'FAIL: person C is an owner'; end if;
+do $$ declare refused boolean := false; begin
+  begin perform * from public.owner_reviews(); exception when insufficient_privilege then refused := true; end;
+  if not refused then raise exception 'FAIL: person C could list every review'; end if;
 end $$;
 reset role;
 delete from auth.users where id = '22222222-2222-2222-2222-222222222222';

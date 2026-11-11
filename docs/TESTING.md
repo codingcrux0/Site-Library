@@ -558,3 +558,9 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 - **Real Chrome with phone settings (320 and 390), simulated database:** signed out: a sign-in sentence and no database call at all; signed in as a stranger: one sentence, only "is owner" is asked and the reviews are never requested; as the owner: the waiting and shown lists, approve (sends the exact text), a refused approval ("changed or removed" sentence, nothing moves), hide, delete (asks first, nothing is sent until "Yes, delete"). A review containing `<img onerror>` stayed text and ran nothing. No sideways scroll, 0 CSP errors, 0 page errors.
 - **Not tested:** the real owner account on the real page; Safari, Firefox, a real phone; a screen reader; dark mode on this page.
 
+## 2026-11-11 (night, later) — advisor hardening (D50)
+- **Advisor run locally** (Supabase's open-source checks against a local copy of our schema): 12 findings before, 9 after; the 9 are the deliberate ones in D50. Tests updated first and seen to fail (2 failing), then the code changed.
+- **199 of 199 pass** (type check, build and scans repeated before the push). The database test passes again, and four new deliberate breakages are caught (browser or signed-out visitor may call `is_owner`, owners table readable, everyone made an owner).
+- **Chrome with phone settings:** signed out (no call), stranger (one request, `owner_reviews`, refused, one sentence), owner (approve, refused approval, hide, delete) all behave as before; 0 CSP and 0 page errors.
+- **Not done / not seen:** the real project's advisor tab, the real database change (until the connection string is given), GraphQL exposure (depends on the real project).
+

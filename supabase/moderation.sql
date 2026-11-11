@@ -17,15 +17,18 @@ create table if not exists public.owners (
 -- No policy and no grant: through the site, nobody can read or write this table, not even the owner. Only the SQL Editor can change it.
 alter table public.owners enable row level security;
 revoke all on public.owners from anon, authenticated;
+-- The same "no", said out loud as a policy (it changes nothing; it makes the intent plain and Supabase's advisor stops listing the table).
+drop policy if exists "nobody" on public.owners;
+create policy "nobody" on public.owners for all to authenticated using (false) with check (false);
 
 -- "Is the person calling me an owner?" (true or false). It runs with the database owner's rights so it can read the table above.
+-- Only the three owner functions below use it (they run with the same rights). The browser cannot call it, so one less function is exposed.
 create or replace function public.is_owner() returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.owners where user_id = (select auth.uid()))
 $$;
 
 revoke all on function public.is_owner() from public, anon, authenticated;
-grant execute on function public.is_owner() to authenticated;
 
 -- Every review, the ones waiting first, then the newest; each with the author's email (the owner may see who wrote it; the Privacy page says so).
 create or replace function public.owner_reviews()

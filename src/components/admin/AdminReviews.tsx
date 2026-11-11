@@ -42,12 +42,9 @@ export default function AdminReviews({ names }: { names: Record<string, string> 
       const supabase = await client();
       const { data } = await supabase.auth.getSession();
       if (!data.session) return setView({ status: "out" });
-      // First ask whether this person is the owner. Only then ask for the reviews (the database would refuse anyone else anyway).
-      const asked = await supabase.rpc("is_owner");
-      if (asked.error) return setView({ status: "error" });
-      if (asked.data !== true) return setView({ status: "denied" });
+      // Ask for the reviews. The database answers only the owner; anyone else is refused ("permission denied", code 42501) and gets nothing.
       const list = await supabase.rpc("owner_reviews");
-      if (list.error) return setView({ status: "error" });
+      if (list.error) return setView({ status: list.error.code === "42501" ? "denied" : "error" });
       setView({ status: "ready", rows: parseOwnerReviews(list.data) });
     } catch {
       setView({ status: "error" });

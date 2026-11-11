@@ -98,3 +98,5 @@ OWASP Top 10 and OWASP ASVS (target Level 2) are the checklists. **Verify the cu
 | Only 2 free Supabase projects | Accepted. So: dev + prod, no separate staging. |
 | GitHub Actions schedules in public repos stop after 60 days of no repo activity | Open. A private repo avoids this but has limited free minutes (verify). |
 | Legal review of privacy policy, 18+ rule, DPDP/GDPR | **Blocking gate.** See CONTEXT.md. |
+
+- **Supabase advisor (D50):** the "Security Definer View" errors on `rating_summary` and `review_feed` and the "Signed-in users can execute SECURITY DEFINER function" warnings are deliberate, each with its reason in D50. If the Advisors tab shows anything else, it is new: read it and tell me.

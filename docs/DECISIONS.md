@@ -523,3 +523,12 @@ Three drafts in `docs/legal/` (policy, terms with the 18+ rule, and the reviewer
 **Extra layer, not built (needs the owner's Cloudflare login and is optional):** Cloudflare Access in front of `/admin/*`. Say so if wanted.
 **Owner must:** keep two-step login on the Google and GitHub account used to sign in (they are now the key to this page).
 
+## D50. Supabase advisor read and judged item by item (2026-11-11)
+**Owner asked:** read the Advisors tab, think about whether each finding makes the site safer, apply what does, push it.
+**How:** I have no dashboard login, so I ran Supabase's own open-source advisor checks ("splinter", the SQL the tab is built on) against a local copy of our exact database design: 12 findings. Not seen: anything the tab reads from Supabase's settings instead of the database (for example a Postgres version notice, auth settings), and anything that depends on the real project (see "Still to do").
+**Applied (2 findings cleared, 12 down to 9):** (1) `is_owner()` is no longer callable from the browser: only the three owner functions use it (they run with the same rights), and the owner page now asks `owner_reviews` directly and shows its one sentence when the database says "permission denied" (one request instead of two). (2) The `owners` table gets an explicit deny-all policy (`using (false)`): same effect as before, but the intent is written down and the advisor stops listing it.
+**Kept on purpose, with the reason:**
+- *Security Definer View (ERROR) on `rating_summary` and `review_feed`:* this is the design. The views run with the database owner's rights so a signed-out visitor can read only totals and approved text, with no access to any table. The "fix" Supabase suggests (making the views run as the caller) would need signed-out visitors to be able to read the rating and review rows themselves, exposing more, not less. Not changed.
+- *Signed-In Users Can Execute SECURITY DEFINER Function (WARN) on `delete_my_account`, `owner_reviews`, `owner_set_review`, `owner_delete_review`:* signed-in people must be able to call these from the site. Each one checks who is calling before it does anything (`auth.uid()` or `is_owner()`), and tests prove a non-owner and a signed-out visitor are refused. Not changed.
+- *Unindexed foreign key on `list_items_list_fk`, and two unused indexes:* performance notes only, with no effect at this size (the "unused" ones simply have not been needed yet; one is what makes removing a bookmark fast later). Not changed; revisit if the tables ever hold many thousands of rows.
+

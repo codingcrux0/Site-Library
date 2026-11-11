@@ -63,7 +63,13 @@ test("the database file locks every owner function to the owner, and the owners 
   }
   assert.match(sql, /alter table public\.owners enable row level security/);
   assert.match(sql, /revoke all on public\.owners from anon, authenticated/);
-  assert.doesNotMatch(sql, /create policy[^;]*on public\.owners/i, "nobody may read or write the owners table through the page");
+  // The only policy the owners table may have is an explicit "no" (it says out loud what the missing grant already enforces).
+  const policies = [...sql.matchAll(/create policy[^;]*on public\.owners[^;]*;/gi)].map((m) => m[0]);
+  assert.ok(policies.length >= 1, "an explicit deny-all policy documents the intent (and clears the Supabase advisor note)");
+  for (const policy of policies) assert.match(policy, /using \(false\)[\s\S]*with check \(false\)/, "an owners policy may only say no");
+  // "Is this person the owner?" is used inside the owner functions only; the browser cannot call it (one less function exposed).
+  assert.match(sql, /revoke all on function public\.is_owner\(\) from public, anon, authenticated/);
+  assert.doesNotMatch(sql, /grant execute on function public\.is_owner/);
   assert.doesNotMatch(sql, /to anon/i, "a signed-out visitor is never given anything here");
   // Approving only counts for the exact text the owner read: if the author edits it in between, the approval is refused.
   assert.match(sql, /body = p_body/);
@@ -79,15 +85,15 @@ test("the owner page is private: not in the sitemap or robots.txt, no search lis
   }
 });
 
-test("the owner page only calls the four owner functions, holds no key, and shows reviews as text", () => {
+test("the owner page only calls the three owner functions, holds no key, and shows reviews as text", () => {
   const source = read("../components/admin/AdminReviews.tsx");
   const calls = [...source.matchAll(/\.rpc\(\s*"([a-z_]+)"/g)].map((m) => m[1]).sort();
-  assert.deepEqual([...new Set(calls)], ["is_owner", "owner_delete_review", "owner_reviews", "owner_set_review"]);
+  assert.deepEqual([...new Set(calls)], ["owner_delete_review", "owner_reviews", "owner_set_review"]);
   assert.doesNotMatch(source, /\.from\(|\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage|document\.cookie|dangerouslySetInnerHTML|innerHTML/);
   assert.doesNotMatch(source, /sb_secret_|service_role|SERVICE|sb_publishable_/i);
   // An approval carries the text the owner read, so an edit made in between cannot slip through.
   assert.match(source, /p_body:/);
   assert.match(source, /whitespace-pre-line break-words/);
-  // Until the owner is confirmed, no review is asked for.
-  assert.match(source, /"is_owner"[\s\S]*"owner_reviews"/);
+  // Anyone who is not the owner is refused by the database (permission denied); the page then shows its one sentence.
+  assert.match(source, /code === "42501"/);
 });
