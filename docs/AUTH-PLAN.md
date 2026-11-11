@@ -1,6 +1,6 @@
 # AUTH-PLAN.md: sign-in with Google and GitHub, and bookmarks
 
-Status: **PLAN ONLY (2026-11-10). No code is written, nothing is connected.** The owner approved "Google and GitHub sign-in, no passwords". The LEGAL GATE still applies: accounts do not go live for real people until the privacy policy and the age rule are done (CONTEXT.md).
+Status: **STEP 1 DONE (2026-11-11): the database rules and their tests are written; nothing is connected to the site yet.** The dev Supabase project exists (public address https://xqvqsdoxtcgeuwwbfhbg.supabase.co, not a secret). The owner approved "Google and GitHub sign-in, no passwords". The LEGAL GATE still applies: accounts do not go live for real people until the privacy policy and the age rule are done (CONTEXT.md).
 Builds on D1 (Cloudflare + Supabase) and SECURITY.md. Where this file and SECURITY.md differ, this one is newer for sign-in.
 
 ## What gets built (and what does not)
@@ -54,3 +54,8 @@ Not covered here (said plainly): a compromise of Supabase, Google or GitHub them
 
 ## Not verified yet
 Everything above is a plan. No control is marked verified. Supabase's current limits, redirect settings and rate limits must be read from its docs on the day of building, not assumed.
+
+## Progress log
+- **2026-11-11, step 1 (database side).** The owner approved the two-button `/sign-in` page and `@supabase/supabase-js`, and made the dev project. Written test-first: `src/lib/bookmarks.ts` (id rule, limit, list merge) with `src/lib/bookmarks.test.mjs` (5 tests, failed first, then passed; they also check the page and database rules stay equal), `supabase/bookmarks.sql` (table, row-level security, no access for signed-out visitors, no update, 500 limit) and `supabase/rls-test.sql` (two pretend people try to break every rule, then everything is rolled back).
+  **Not yet run:** the SQL has NOT been run against the real project, so T1, T6 and T8 are still unverified. The owner runs `bookmarks.sql`, then `rls-test.sql`, and sends the result.
+  **Not yet added:** the library, the `/sign-in` page change, the CSP address, the publishable key. These come with the sign-in step.
