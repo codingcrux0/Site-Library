@@ -72,10 +72,45 @@ test("'My lists' is one thing: the tab and the sidebar item open the same view, 
   const source = read("../components/library/LibraryPage.tsx");
   assert.match(source, /My lists/);
   assert.match(source, /Sign in to see your lists/);
-  assert.match(source, /You have not saved a website yet/);
+  assert.match(read("../components/library/ListsView.tsx"), /You have not saved a website yet/);
   assert.ok(!/Saving lists comes next/.test(source), "the old placeholder must be gone");
   assert.ok(!/useState<"list" \| "bookmarks">/.test(source), "there is one view state: the tab");
   assert.match(source, /<AccountMenu api=\{api\} \/>/);
+});
+
+test("named lists are saved through use-account.ts: only the name, or the list and the website, are sent; never an owner", () => {
+  const source = read("../components/library/use-account.ts");
+  assert.match(source, /from\("lists"\)\s*\.insert\(\{ name: clean\.name \}\)/);
+  assert.match(source, /from\("lists"\)\.update\(\{ name: clean\.name \}\)\.eq\("id", id\)/);
+  assert.match(source, /from\("lists"\)\.delete\(\)\.eq\("id", id\)/);
+  assert.match(source, /from\("list_items"\)\.insert\(\{ list_id: listId, site_id: siteId \}\)/);
+  assert.match(source, /from\("list_items"\)\.delete\(\)\.eq\("list_id", listId\)\.eq\("site_id", siteId\)/);
+  assert.match(source, /cleanListName\(/);
+  assert.match(source, /parseLists\(/);
+  // The download of "my data" includes the lists, and sign-out and account deletion empty them.
+  assert.match(source, /lists:\s*live\.current\.lists/);
+  assert.equal(source.match(/setLists\(\[\]\)/g)?.length, 2, "sign-out and delete-account must both clear the lists");
+});
+
+test("the lists view and the list picker send nothing themselves, show names as text, and never offer a website that is not saved", () => {
+  for (const file of ["ListsView.tsx", "ListPicker.tsx"]) {
+    const source = read(`../components/library/${file}`);
+    assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage|document\.cookie|supabase|dangerouslySetInnerHTML|innerHTML/i, file);
+  }
+  const view = read("../components/library/ListsView.tsx");
+  assert.match(view, /New list/);
+  assert.match(view, /Rename/);
+  assert.match(view, /Delete list/);
+  assert.match(view, /Your bookmarks stay/);
+  assert.match(view, /maxLength=\{LIST_NAME_MAX\}/);
+  assert.match(view, /LIST_MAX/);
+  const picker = read("../components/library/ListPicker.tsx");
+  assert.match(picker, /type="checkbox"/);
+  assert.match(picker, /aria-expanded/);
+  assert.match(picker, /You have no lists yet/);
+  // It is wired into the My lists view of the page, and only there (a website must be saved before it can be put in a list).
+  const page = read("../components/library/LibraryPage.tsx");
+  assert.match(page, /<ListsView/);
 });
 
 test("the account menu shows the person's own name and picture, as text and as a picture from Google or GitHub only", () => {

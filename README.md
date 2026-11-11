@@ -99,7 +99,7 @@ site-library/
 | `docs/project_spec.md` | The product spec |
 | `docs/ARCHITECTURE.md` | How the pieces fit |
 | `docs/SECURITY.md` | Threat model, permission table, controls |
-| `docs/DECISIONS.md` | What we chose and why (D1 to D47) |
+| `docs/DECISIONS.md` | What we chose and why (D1 to D48) |
 | `docs/GRADING.md` | The one set of rules every website is graded, categorised and tagged by |
 | `docs/TESTING.md` | What has been verified, with real results |
 | `docs/INCIDENT.md` | What to do when something goes wrong |

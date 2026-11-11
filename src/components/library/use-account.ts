@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ACCOUNTS_OPEN, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/config/supabase";
 import { STORAGE_KEY, hasStoredSession, parseSummaries, profileOf, type Profile, type RatingSummary } from "@/lib/account";
 import { MAX_BOOKMARKS, isSiteId } from "@/lib/bookmarks";
+import { LIST_MAX, cleanListName, parseLists, type MyList } from "@/lib/lists";
 import { cleanReview, parseMine, parsePublicReviews, type MyReview, type PublicReview } from "@/lib/reviews";
 import type { getSupabase } from "@/lib/supabase-client";
 
 /*
  * Everything the list page needs to know about the visitor's account, in one place: who is signed in, their bookmarks, their own star
- * ratings and written reviews, and everyone's star averages (and the approved reviews of one website, when its panel opens). Plan: docs/AUTH-PLAN.md. The rules it follows are tested in src/lib/account.test.mjs.
+ * ratings, written reviews and named lists, and everyone's star averages (and the approved reviews of one website, when its panel opens). Plan: docs/AUTH-PLAN.md. The rules it follows are tested in src/lib/account.test.mjs.
  *
  * Speed: a visitor who never signed in downloads nothing extra. The Supabase library (216 KB) is only loaded when this browser has a
  * saved sign-in (hasStoredSession) or when someone presses a button that needs it. The star averages are one small plain request.
@@ -59,10 +60,11 @@ export function useAccount() {
   const [bookmarks, setBookmarks] = useState<string[]>([]); // newest first
   const [mine, setMine] = useState<ReadonlyMap<string, number>>(new Map()); // the visitor's own ratings
   const [reviews, setReviews] = useState<ReadonlyMap<string, MyReview>>(new Map()); // the visitor's own written reviews
+  const [lists, setLists] = useState<readonly MyList[]>([]); // the visitor's own named lists, oldest first, each with its saved websites
   const [summaries, setSummaries] = useState<ReadonlyMap<string, RatingSummary>>(new Map());
   // Always the latest values, for actions that run later (a click handler must not act on stale lists).
-  const live = useRef({ bookmarks, mine, reviews });
-  live.current = { bookmarks, mine, reviews };
+  const live = useRef({ bookmarks, mine, reviews, lists });
+  live.current = { bookmarks, mine, reviews, lists };
   const userId = useRef<string | null>(null);
 
   const refreshSummaries = useCallback(() => {
@@ -83,14 +85,17 @@ export function useAccount() {
         setBookmarks([]);
         setMine(new Map());
         setReviews(new Map());
+        setLists([]);
         return;
       }
       userId.current = session.user.id;
       setAccount({ status: "in", profile: profileOf(session.user), email: session.user.email ?? "" });
-      const [saved, rated, written] = await Promise.all([
+      const [saved, rated, written, madeLists, listed] = await Promise.all([
         supabase.from("bookmarks").select("site_id").order("created_at", { ascending: false }).limit(MAX_BOOKMARKS),
         supabase.from("ratings").select("site_id, stars").limit(MAX_BOOKMARKS),
         supabase.from("reviews").select("site_id, body, approved").limit(MAX_BOOKMARKS),
+        supabase.from("lists").select("id, name, created_at").limit(LIST_MAX),
+        supabase.from("list_items").select("list_id, site_id").limit(1000),
       ]);
       if (cancelled || userId.current !== session.user.id) return;
       // Whatever came back is checked again before use (a table that is missing or a bad row just means "nothing yet").
@@ -103,6 +108,7 @@ export function useAccount() {
         ),
       );
       setReviews(parseMine(written.data));
+      setLists(parseLists(madeLists.data, listed.data));
     };
 
     (async () => {
@@ -142,6 +148,8 @@ export function useAccount() {
       setBookmarks((list) => (had ? [id, ...list] : list.filter((item) => item !== id)));
       return NO_SAVE;
     }
+    // A website that is no longer saved is in no list (the database removes it from every list itself; this just matches the picture).
+    if (had) setLists((all) => all.map((list) => ({ ...list, sites: list.sites.filter((site) => site !== id) })));
     return null;
   }, []);
 
@@ -244,6 +252,86 @@ export function useAccount() {
     return null;
   }, []);
 
+  // ---- Named lists: private groupings of saved websites. Checked here for a friendly message, and again by the database. ----
+
+  const createList = useCallback(async (name: string): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
+    if (live.current.lists.length >= LIST_MAX) return { ok: false, error: `You can make up to ${LIST_MAX} lists. Delete one to make another.` };
+    const clean = cleanListName(name, live.current.lists.map((list) => list.name));
+    if (!clean.ok) return clean;
+    try {
+      const supabase = await client();
+      const { data, error } = await supabase.from("lists").insert({ name: clean.name }).select("id, name, created_at").single();
+      if (error) throw error;
+      const made = parseLists([data], [])[0]; // the id comes from the database; it is checked before use
+      if (!made) throw new Error("unexpected answer");
+      setLists((all) => [...all, made]);
+      return { ok: true, id: made.id };
+    } catch (error) {
+      return { ok: false, error: (error as { code?: string })?.code === "23505" ? "You already have a list with that name." : NO_SAVE };
+    }
+  }, []);
+
+  const renameList = useCallback(async (id: string, name: string): Promise<string | null> => {
+    const before = live.current.lists.find((list) => list.id === id);
+    if (!before) return NO_SAVE;
+    const clean = cleanListName(name, live.current.lists.filter((list) => list.id !== id).map((list) => list.name));
+    if (!clean.ok) return clean.error;
+    if (clean.name === before.name) return null;
+    setLists((all) => all.map((list) => (list.id === id ? { ...list, name: clean.name } : list)));
+    try {
+      const supabase = await client();
+      const { error } = await supabase.from("lists").update({ name: clean.name }).eq("id", id);
+      if (error) throw error;
+    } catch (error) {
+      setLists((all) => all.map((list) => (list.id === id ? { ...list, name: before.name } : list)));
+      return (error as { code?: string })?.code === "23505" ? "You already have a list with that name." : NO_SAVE;
+    }
+    return null;
+  }, []);
+
+  // Delete one list. Only the list goes: the websites stay saved (the database removes just the list and its membership rows).
+  const deleteList = useCallback(async (id: string): Promise<string | null> => {
+    const index = live.current.lists.findIndex((list) => list.id === id);
+    const before = live.current.lists[index];
+    if (!before) return null;
+    setLists((all) => all.filter((list) => list.id !== id));
+    try {
+      const supabase = await client();
+      const { error } = await supabase.from("lists").delete().eq("id", id);
+      if (error) throw error;
+    } catch {
+      setLists((all) => [...all.slice(0, index), before, ...all.slice(index)]); // back where it was
+      return NO_SAVE;
+    }
+    return null;
+  }, []);
+
+  // Put a saved website in a list, or take it out (it stays saved either way).
+  const toggleInList = useCallback(async (listId: string, siteId: string): Promise<string | null> => {
+    const list = live.current.lists.find((item) => item.id === listId);
+    if (!list || !isSiteId(siteId)) return NO_SAVE;
+    const had = list.sites.includes(siteId);
+    if (!had && !live.current.bookmarks.includes(siteId)) return "Save the website first, then put it in a list.";
+    const change = (adding: boolean) =>
+      setLists((all) =>
+        all.map((item) =>
+          item.id !== listId ? item : { ...item, sites: adding ? [...item.sites.filter((site) => site !== siteId), siteId] : item.sites.filter((site) => site !== siteId) },
+        ),
+      );
+    change(!had);
+    try {
+      const supabase = await client();
+      const { error } = had
+        ? await supabase.from("list_items").delete().eq("list_id", listId).eq("site_id", siteId)
+        : await supabase.from("list_items").insert({ list_id: listId, site_id: siteId });
+      if (error && error.code !== "23505") throw error; // 23505 = already in the list: that is what was wanted
+    } catch {
+      change(had);
+      return NO_SAVE;
+    }
+    return null;
+  }, []);
+
   const signOut = useCallback(async (): Promise<string | null> => {
     try {
       const supabase = await client();
@@ -274,6 +362,7 @@ export function useAccount() {
     setBookmarks([]);
     setMine(new Map());
     setReviews(new Map());
+    setLists([]);
     return null;
   }, []);
 
@@ -288,6 +377,7 @@ export function useAccount() {
         bookmarks: live.current.bookmarks,
         ratings: [...live.current.mine].map(([site, stars]) => ({ site, stars })),
         reviews: [...live.current.reviews].map(([site, review]) => ({ site, text: review.body, approved: review.approved })),
+        lists: live.current.lists.map((list) => ({ name: list.name, sites: list.sites })),
       };
       const url = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: "application/json" }));
       const link = document.createElement("a");
@@ -307,12 +397,17 @@ export function useAccount() {
     bookmarks,
     mine,
     reviews,
+    lists,
     summaries,
     toggleBookmark,
     rate,
     clearRating,
     saveReview,
     deleteReview,
+    createList,
+    renameList,
+    deleteList,
+    toggleInList,
     loadReviews: fetchReviews,
     signOut,
     deleteAccount,

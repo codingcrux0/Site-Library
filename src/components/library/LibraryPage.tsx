@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { AccountMenu } from "./AccountMenu";
 import { EntryActions } from "./EntryActions";
 import { FeedbackDrawer } from "./FeedbackDrawer";
+import { ListsView } from "./ListsView";
 import { TypeFilter } from "./TypeFilter";
 import { useAccount } from "./use-account";
 
@@ -25,7 +26,7 @@ import { useAccount } from "./use-account";
  * It is ONE React island (hydrated with client:load), so the page numbers, tabs, categories, filter and search all share one state.
  * The search box sits in the site header (outside this island): the page leaves an empty spot with id="header-search" there and this
  * island draws the box into it (a "portal"), so the box can share this state without a new package.
- * "My lists" (the last tab, and the sidebar item of the same name) is the person's saved websites: one view, opened from either place (D47).
+ * "My lists" (the last tab, and the sidebar item of the same name) is the person's saved websites and their named lists: one view, opened from either place (D47, D48; ListsView.tsx).
  * A row is one website seen through one category (src/lib/listings.ts): a website in two categories is judged in each, and the sidebar and
  * the filter count it in both. "Top user scored" and "Best for free" are two more ways to order the same rows (D35).
  * Each row shows its name, its types and ONE line of the description; hovering (or tabbing to) a row turns it into a box, swaps that line
@@ -296,34 +297,25 @@ export default function LibraryPage({ entries, categories }: Props) {
         >
           {showingLists ? (
             api.account.status === "in" ? (
-              <section aria-labelledby="library-lists-title">
-                <h2 id="library-lists-title" className="flex items-baseline gap-3 text-lg font-semibold tracking-tight">
-                  My lists
-                  <span className="text-sm font-normal text-ink-muted tabular-nums">{savedRows.length === 1 ? "1 site" : `${savedRows.length} sites`}</span>
-                </h2>
-                {savedRows.length === 0 ? (
-                  <p className="mt-6 max-w-xl leading-relaxed text-ink-secondary">
-                    You have not saved a website yet. Press the bookmark button on any website and it is kept here, in your account.
-                  </p>
-                ) : (
-                  <ul className="mt-2 divide-y divide-line-subtle border-b border-line-subtle">
-                    {savedRows.map((row) => (
-                      <EntryRow
-                        key={row.entry.id}
-                        row={row}
-                        showFree={false}
-                        onOpenFeedback={openFeedback}
-                        signedIn
-                        bookmarked
-                        myRating={api.mine.get(row.entry.id) ?? 0}
-                        onBookmark={api.toggleBookmark}
-                        onRate={api.rate}
-                        onClear={api.clearRating}
-                      />
-                    ))}
-                  </ul>
+              <ListsView
+                api={api}
+                rows={savedRows}
+                renderRow={(row, extra) => (
+                  <EntryRow
+                    key={row.entry.id}
+                    row={row}
+                    showFree={false}
+                    onOpenFeedback={openFeedback}
+                    signedIn
+                    bookmarked
+                    myRating={api.mine.get(row.entry.id) ?? 0}
+                    onBookmark={api.toggleBookmark}
+                    onRate={api.rate}
+                    onClear={api.clearRating}
+                    extra={extra}
+                  />
                 )}
-              </section>
+              />
             ) : api.account.status === "loading" ? (
               <p role="status" className="mt-6 text-ink-secondary">
                 Loading your lists...
@@ -508,6 +500,7 @@ const EntryRow = memo(function EntryRow({
   onBookmark,
   onRate,
   onClear,
+  extra,
 }: {
   row: Listing;
   showFree: boolean;
@@ -520,6 +513,8 @@ const EntryRow = memo(function EntryRow({
   onBookmark: (id: string) => Promise<string | null>;
   onRate: (id: string, stars: number) => Promise<string | null>;
   onClear: (id: string) => Promise<string | null>;
+  /** Something more to show with the row's buttons (the "Lists" button in the My lists view). */
+  extra?: React.ReactNode;
 }) {
   const { entry, average, ratings } = row;
   // "Best for free" shows the free score; every other tab shows the main score of the category being looked at.
@@ -628,6 +623,7 @@ const EntryRow = memo(function EntryRow({
             onClear={onClear}
             onReview={(button) => onOpenFeedback(entry, button, true)}
           />
+          {extra}
           <dl className="flex gap-8 text-sm">
             <div>
               <dt className="text-ink-muted">{score.label}</dt>

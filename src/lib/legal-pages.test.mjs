@@ -59,3 +59,9 @@ test("both pages cover written reviews: plain text, shown without a name, held u
   // The menu's "Download my data" file really contains them (the page promises it).
   assert.match(read("../components/library/use-account.ts"), /reviews:/);
 });
+
+test("the privacy page covers named lists (private, deleted with the account) and the data download includes them", () => {
+  assert.match(privacy, /lists you make/i);
+  assert.match(privacy, /your lists/i);
+  assert.match(read("../components/library/use-account.ts"), /lists:\s*live\.current\.lists/);
+});
