@@ -32,10 +32,17 @@ import { SITE } from '@/config/site';
 			<strong>What we get from them:</strong> your email address, your name and the address of your profile picture, a unique sign-in ID and which
 			one you used. The name and picture are shown only to you, in the sidebar. Nobody else sees them.
 		</li>
-		<li><strong>What you add:</strong> the websites you bookmark and the star ratings you give, each linked to your account.</li>
+		<li>
+			<strong>What you add:</strong> the websites you bookmark, the star ratings you give and the written reviews you write, each linked to your account.
+		</li>
 		<li>
 			<strong>Who can see your bookmarks and ratings:</strong> only you. The database refuses anyone else, and that is tested. The person who runs the
 			database (the owner) can see them in its dashboard. Everyone sees only the totals for each website, such as "4.5 from 12 ratings", never who gave them.
+		</li>
+		<li>
+			<strong>Written reviews:</strong> a review is plain text. The owner reads each new or changed review and approves it before anyone else can see it.
+			Once approved, everyone can read it on that website's feedback panel, with the date and without your name. The owner can still see who wrote it,
+			and can remove it. You can change or delete your review at any time. A changed review waits to be approved again.
 		</li>
 		<li>
 			<strong>Your browser</strong> keeps your sign-in in its local storage, so you stay signed in until you sign out.
@@ -49,7 +56,7 @@ import { SITE } from '@/config/site';
 
 	<h2>Where it is stored</h2>
 	<p>
-		Accounts, bookmarks and ratings are stored with <a href="https://supabase.com/privacy" rel="noopener noreferrer">Supabase</a>, our database
+		Accounts, bookmarks, ratings and reviews are stored with <a href="https://supabase.com/privacy" rel="noopener noreferrer">Supabase</a>, our database
 		provider, on Amazon Web Services in Tokyo, Japan.
 	</p>
 
@@ -57,7 +64,7 @@ import { SITE } from '@/config/site';
 	<ul>
 		<li><strong>See your data:</strong> open your name in the sidebar of the list page and choose "Download my data".</li>
 		<li>
-			<strong>Delete it:</strong> choose "Delete my account" in the same place. Your account, your bookmarks and your ratings are deleted at once.
+			<strong>Delete it:</strong> choose "Delete my account" in the same place. Your account, your bookmarks, your ratings and your reviews are deleted at once.
 			Backups kept by our database provider may hold a copy for a while. We have not confirmed for how long.
 		</li>
 		<li><strong>Questions or a problem:</strong> message <a href={SITE.xUrl} rel="noopener noreferrer">@Adicrux on X</a>.</li>

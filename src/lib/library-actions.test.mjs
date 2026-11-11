@@ -35,8 +35,15 @@ test("the review, rating and bookmark buttons never talk to the network or the b
   assert.ok(!/Accounts are not open yet/.test(source), "accounts are open now, so no prompt may say they are not");
   // The star shows only the visitor's OWN rating (0 when they have none), so a rating nobody gave can never appear.
   assert.match(source, /value=\{armed \? myRating : myRating > 0 \? 1 : 0\}/);
-  // A written review is not built; signed in, the button says so plainly instead of pretending.
-  assert.match(source, /Written reviews are not open yet/);
+  // Signed in, the Review button opens the feedback panel (where the review is written); it no longer says "not open yet".
+  assert.match(source, /onReview/);
+  assert.ok(!/not open yet/.test(source));
+  // On a touch screen the first tap only OPENS the five stars; it must never rate one star by itself (found in the phone test, D47).
+  assert.match(source, /onPointerDownCapture/);
+  assert.match(source, /pointerType !== "mouse"/);
+  // After rating, a person can take the rating back.
+  assert.match(source, /Clear my rating/);
+  assert.match(source, /onClear/);
 });
 
 test("everything that is saved goes through use-account.ts: only the website and the stars are sent, never the owner, and never a secret key", () => {
@@ -46,6 +53,14 @@ test("everything that is saved goes through use-account.ts: only the website and
   assert.match(source, /from\("ratings"\)\.update\(\{ stars \}\)/);
   assert.doesNotMatch(source, /user_id/, "the database fills in the owner; the page never names one");
   assert.match(source, /rpc\("delete_my_account"\)/);
+  // Written reviews: the checked text and the website only; the owner of a review and its "approved" flag are never named by the page.
+  assert.match(source, /from\("reviews"\)\.insert\(\{ site_id: id, body: clean\.text \}\)/);
+  assert.match(source, /from\("reviews"\)\.update\(\{ body: clean\.text \}\)/);
+  assert.match(source, /from\("reviews"\)\.delete\(\)\.eq\("site_id", id\)/);
+  assert.match(source, /from\("ratings"\)\.delete\(\)\.eq\("site_id", id\)/);
+  assert.doesNotMatch(source, /approved\s*:\s*true/);
+  assert.match(source, /cleanReview\(/);
+  assert.match(source, /\/rest\/v1\/review_feed/);
   assert.doesNotMatch(source, /sb_secret_|service_role|SERVICE/i);
   // The public averages are one plain request with the publishable key, no library needed.
   assert.match(source, /\/rest\/v1\/rating_summary/);
@@ -53,11 +68,13 @@ test("everything that is saved goes through use-account.ts: only the website and
   assert.match(source, /hasStoredSession\(window\.localStorage\)/);
 });
 
-test("the list page has a Bookmarks item in the sidebar: a sign-in prompt when signed out, the saved websites when signed in", () => {
+test("'My lists' is one thing: the tab and the sidebar item open the same view, a sign-in prompt when signed out, the saved websites when signed in", () => {
   const source = read("../components/library/LibraryPage.tsx");
-  assert.match(source, /Bookmarks/);
-  assert.match(source, /Sign in to see your bookmarks/);
-  assert.match(source, /You have not bookmarked a website yet/);
+  assert.match(source, /My lists/);
+  assert.match(source, /Sign in to see your lists/);
+  assert.match(source, /You have not saved a website yet/);
+  assert.ok(!/Saving lists comes next/.test(source), "the old placeholder must be gone");
+  assert.ok(!/useState<"list" \| "bookmarks">/.test(source), "there is one view state: the tab");
   assert.match(source, /<AccountMenu api=\{api\} \/>/);
 });
 
@@ -73,11 +90,16 @@ test("the account menu shows the person's own name and picture, as text and as a
   assert.match(source, /This cannot be undone/);
 });
 
-test("the feedback panel only reads: it sends nothing itself, and a signed-in person is told plainly that written reviews are not open", () => {
+test("the feedback panel sends nothing itself: reviews are shown as plain text without names, and written through the account hook", () => {
   const source = read("../components/library/FeedbackDrawer.tsx");
-  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage|document\.cookie/);
-  assert.ok(!/Accounts are not open yet/.test(source));
-  assert.match(source, /Written reviews are not open yet/);
+  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage|document\.cookie|supabase/i);
+  assert.doesNotMatch(source, /dangerouslySetInnerHTML|innerHTML/, "a review is always shown as plain text");
+  assert.ok(!/Accounts are not open yet|not open yet/.test(source));
+  assert.match(source, /<textarea/);
+  assert.match(source, /maxLength=\{REVIEW_MAX\}/);
+  assert.match(source, /waiting to be checked/i);
+  assert.match(source, /Delete my review/);
+  assert.match(source, /Clear my rating/);
   assert.match(source, /href="\/sign-in"/);
   // A dialog that can be closed with the keyboard, and that a screen reader knows is a dialog.
   assert.match(source, /role="dialog"/);

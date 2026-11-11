@@ -1,5 +1,5 @@
 import { Bookmark, MessageSquare } from "lucide-react";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { StarRating } from "@/components/wensity/star-rating";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
  * Signed in (see use-account.ts): the stars save YOUR rating (and show it), and the bookmark button saves or removes the website from your
  * bookmarks. Signed out, those buttons ask the visitor to sign in and nothing is saved or sent. Whatever the buttons show is only a
  * picture of what the database allows: the database's own rules (the .sql files in the database folder) decide, so editing this page changes nothing for anyone else.
- * "Review" (a written review) is not built yet; signed in, it says so plainly. No rating or review is ever shown that nobody wrote.
+ * "Review" opens the feedback panel (FeedbackDrawer.tsx), where a signed-in person writes a review; signed out, it asks for a sign-in. After you
+ * rate, a small note says what you gave and offers "Clear my rating". No rating or review is ever shown that nobody wrote.
  *
  * Left of the star rating sits the average of every user's ratings, in a small circle ("4.5 /5", or "–" while nobody has rated).
  *
@@ -46,6 +47,8 @@ function EntryActionsInner({
   myRating,
   onBookmark,
   onRate,
+  onClear,
+  onReview,
 }: {
   id: string;
   name: string;
@@ -57,35 +60,56 @@ function EntryActionsInner({
   myRating: number;
   onBookmark: (id: string) => Promise<string | null>;
   onRate: (id: string, stars: number) => Promise<string | null>;
+  /** Takes the visitor's own rating back. */
+  onClear: (id: string) => Promise<string | null>;
+  /** Opens the feedback panel with the review box ready; the button is passed so the keyboard can be put back on it. */
+  onReview: (button: HTMLElement) => void;
 }) {
   const [ask, setAsk] = useState<Ask | null>(null); // the sign-in prompt (signed-out visitors)
-  const [note, setNote] = useState<string | null>(null); // a plain sentence for signed-in people (a problem, or what Review means)
+  const [note, setNote] = useState<string | null>(null); // a plain sentence for signed-in people (what they just did, or a problem)
+  const [canClear, setCanClear] = useState(false); // true right after a rating was saved: the note then offers "Clear my rating"
   const open = ask !== null || note !== null;
   const [armed, setArmed] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
   const disarmTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // When the five stars opened (0 = they are shut), and whether the tap in progress only opened them (touch screens, see below).
+  const armedAt = useRef(0);
+  const justOpening = useRef(false);
 
   useEffect(() => () => clearTimeout(disarmTimer.current), []);
   const arm = () => {
     clearTimeout(disarmTimer.current);
+    if (armedAt.current === 0) armedAt.current = performance.now();
     setArmed(true);
   };
+  // A finger has no hover, so on a phone the FIRST tap on the pill must only open the five stars. Without this, that tap lands on the single
+  // resting star and rates one star at once. A mouse is never held back (it opens the stars by hovering, before the click).
+  const touchStart = (event: ReactPointerEvent) => {
+    justOpening.current = event.pointerType !== "mouse" && !(armedAt.current > 0 && performance.now() - armedAt.current > 300);
+  };
+  const touchEnd = () => setTimeout(() => (justOpening.current = false), 0); // after the click that follows the tap
   // Wait for the shrinking animation to finish, and stay five stars while the pointer is still over it or it still has the focus.
   const disarm = () => {
     clearTimeout(disarmTimer.current);
     disarmTimer.current = setTimeout(() => {
-      if (!pillRef.current?.matches(":hover, :focus-within")) setArmed(false);
+      if (!pillRef.current?.matches(":hover, :focus-within")) {
+        armedAt.current = 0;
+        setArmed(false);
+      }
     }, 450);
+  };
+
+  const closePrompt = () => {
+    setAsk(null);
+    setNote(null);
+    setCanClear(false);
   };
 
   // While the prompt is open: Escape, a click elsewhere, or the pointer moving onto a different row closes it (only one row stays open).
   useEffect(() => {
     if (!open) return;
-    const close = () => {
-      setAsk(null);
-      setNote(null);
-    };
+    const close = closePrompt;
     const outside = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) close();
     };
@@ -112,12 +136,20 @@ function EntryActionsInner({
     setNote(await onBookmark(id));
   };
   const rate = async (stars: number) => {
+    if (justOpening.current) return; // that tap only opened the stars
     if (!signedIn) return setAsk("rate");
-    setNote(await onRate(id, stars));
+    const problem = await onRate(id, stars);
+    setNote(problem ?? `You rated it ${stars} out of 5.`);
+    setCanClear(problem === null);
   };
-  const review = () => {
+  const clear = async () => {
+    const problem = await onClear(id);
+    setCanClear(false);
+    setNote(problem ?? "Your rating is cleared.");
+  };
+  const review = (event: ReactMouseEvent<HTMLButtonElement>) => {
     if (!signedIn) return setAsk("review");
-    setNote("Written reviews are not open yet. You can rate with the stars, or bookmark the website.");
+    onReview(event.currentTarget);
   };
 
   return (
@@ -151,6 +183,9 @@ function EntryActionsInner({
       <div className="relative h-9 w-[7.75rem] shrink-0">
         <div
           ref={pillRef}
+          onPointerDownCapture={touchStart}
+          onPointerUpCapture={touchEnd}
+          onPointerCancelCapture={touchEnd}
           onPointerEnter={arm}
           onFocus={arm}
           onPointerLeave={disarm}
@@ -193,12 +228,18 @@ function EntryActionsInner({
                 Sign in
               </a>
             ) : null}
+            {canClear ? (
+              <button
+                type="button"
+                onClick={clear}
+                className="cursor-pointer rounded-full border border-line-strong px-3.5 py-1.5 text-xs font-semibold transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+              >
+                Clear my rating
+              </button>
+            ) : null}
             <button
               type="button"
-              onClick={() => {
-                setAsk(null);
-                setNote(null);
-              }}
+              onClick={closePrompt}
               className="cursor-pointer rounded-md px-1 text-xs text-ink-secondary underline underline-offset-4 hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
               {ask ? "Not now" : "Close"}

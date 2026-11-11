@@ -25,12 +25,12 @@ import { useAccount } from "./use-account";
  * It is ONE React island (hydrated with client:load), so the page numbers, tabs, categories, filter and search all share one state.
  * The search box sits in the site header (outside this island): the page leaves an empty spot with id="header-search" there and this
  * island draws the box into it (a "portal"), so the box can share this state without a new package.
- * "My lists" is still a labelled placeholder; saving lists comes next (see DECISIONS.md D27 and D28).
+ * "My lists" (the last tab, and the sidebar item of the same name) is the person's saved websites: one view, opened from either place (D47).
  * A row is one website seen through one category (src/lib/listings.ts): a website in two categories is judged in each, and the sidebar and
  * the filter count it in both. "Top user scored" and "Best for free" are two more ways to order the same rows (D35).
  * Each row shows its name, its types and ONE line of the description; hovering (or tabbing to) a row turns it into a box, swaps that line
  * for the full description and opens "the catch" inside it.
- * The right of each row has a star rating, a Review button and a bookmark button (EntryActions.tsx). The sidebar has a Bookmarks view and,
+ * The right of each row has a star rating, a Review button and a bookmark button (EntryActions.tsx). The sidebar has My lists and,
  * at the bottom, the account (AccountMenu.tsx): "Sign in", or the signed-in person's name and picture. Signed out, the buttons ask for a
  * sign-in; signed in, they save bookmarks and ratings (use-account.ts holds all of that: who is signed in, bookmarks, ratings, averages).
  * Opening a row shows a "See user feedback" button; it opens ONE side panel (FeedbackDrawer.tsx) for the whole page (D33).
@@ -64,7 +64,6 @@ export default function LibraryPage({ entries, categories }: Props) {
   const [category, setCategory] = useState(""); // "" = every category
   const [page, setPage] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [view, setView] = useState<"list" | "bookmarks">("list"); // "bookmarks" = the sidebar's Bookmarks view
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string[]>([]); // the types ticked in "Filter by type"
   const [searchSlot, setSearchSlot] = useState<HTMLElement | null>(null);
@@ -120,13 +119,12 @@ export default function LibraryPage({ entries, categories }: Props) {
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, totalPages);
   const shown = rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-  const showingBookmarks = view === "bookmarks";
-  // The Bookmarks view: the saved websites in the order they were saved (newest first); one that has left the list is simply not shown.
+  const showingLists = tab === "lists"; // "My lists": the tab and the sidebar item both open it
+  // The My lists view: the saved websites in the order they were saved (newest first); one that has left the list is simply not shown.
   const savedRows = useMemo(() => {
     const byId = new Map(everyRow.map((row) => [row.entry.id, row]));
     return keepKnown(api.bookmarks, new Set(byId.keys())).map((id) => byId.get(id)!);
   }, [api.bookmarks, everyRow]);
-  const showingLists = tab === "lists" && !showingBookmarks;
 
   const goToPage = (next: number) => {
     setPage(Math.min(totalPages, Math.max(1, next)));
@@ -135,7 +133,7 @@ export default function LibraryPage({ entries, categories }: Props) {
   };
   const pickCategory = (name: string) => {
     setCategory(name);
-    setView("list");
+    if (tab === "lists") setTab("all"); // picking a category means looking at a list of sites
     // Ticked types that no website in the new category has are dropped, or the list would be empty for no visible reason.
     const allowed = new Set(listingsFor(entries, name).flatMap((row) => row.tags));
     setPicked((current) => current.filter((tag) => allowed.has(tag)));
@@ -149,7 +147,6 @@ export default function LibraryPage({ entries, categories }: Props) {
   const changeQuery = (value: string) => {
     setQuery(value);
     setPage(1);
-    setView("list");
     if (tab === "lists") setTab("all"); // searching only makes sense on a list of sites
   };
   const clearNarrowing = () => {
@@ -158,22 +155,22 @@ export default function LibraryPage({ entries, categories }: Props) {
     setPage(1);
   };
   // The feedback panel is ONE panel for the whole page (not one per row); it shows the website whose button was pressed.
-  const [feedbackFor, setFeedbackFor] = useState<Entry | null>(null);
+  const [feedbackFor, setFeedbackFor] = useState<{ entry: Entry; write: boolean } | null>(null); // write: open with the review box ready
   const opener = useRef<HTMLElement | null>(null);
-  const openFeedback = useCallback((entry: Entry, button: HTMLElement) => {
+  const openFeedback = useCallback((entry: Entry, button: HTMLElement, write = false) => {
     opener.current = button;
-    setFeedbackFor(entry);
+    setFeedbackFor({ entry, write });
   }, []);
   const closeFeedback = useCallback(() => {
     setFeedbackFor(null);
     opener.current?.focus(); // put the keyboard back where it was
   }, []);
-  const openBookmarks = () => {
-    setView("bookmarks");
+  const openLists = () => {
+    setTab("lists");
+    setPage(1);
     setMenuOpen(false);
   };
   const pickTab = (id: string) => {
-    setView("list");
     setTab(id);
     setPage(1);
   };
@@ -219,14 +216,14 @@ export default function LibraryPage({ entries, categories }: Props) {
                 </SidebarItem>
                 <SidebarItem
                   icon={<LayoutGrid className="size-[18px]" />}
-                  active={category === "" && !showingBookmarks}
+                  active={category === "" && !showingLists}
                   badge={<Count>{entries.length}</Count>}
                   onClick={() => pickCategory("")}
                 >
                   All sites
                 </SidebarItem>
-                <SidebarItem icon={<Bookmark className="size-[18px]" />} active={showingBookmarks} onClick={openBookmarks}>
-                  Bookmarks
+                <SidebarItem icon={<Bookmark className="size-[18px]" />} active={showingLists} onClick={openLists}>
+                  My lists
                 </SidebarItem>
               </SidebarSection>
               <SidebarSection label="Explore" className={drop} style={entering ? at(360) : undefined}>
@@ -236,7 +233,7 @@ export default function LibraryPage({ entries, categories }: Props) {
                       key={name}
                       className={drop}
                       style={entering ? at(520 + index * 55) : undefined}
-                      active={category === name && !showingBookmarks}
+                      active={category === name && !showingLists}
                       badge={<Count>{perCategory.get(name) ?? 0}</Count>}
                       onClick={() => pickCategory(name)}
                     >
@@ -255,20 +252,18 @@ export default function LibraryPage({ entries, categories }: Props) {
 
       <div className="min-w-0">
         {/* Tabs on the left, the type filter on the right (it drops under the tabs on narrow screens, still at the right edge). */}
-        {showingBookmarks ? null : (
-          <div className="flex flex-wrap items-center gap-3">
-            <div className={cn("min-w-0 max-w-full", drop)} style={entering ? at(450) : undefined}>
-              <GooeyTabs tabs={TABS} value={tab} onChange={pickTab} idPrefix="library" aria-label="Ways to view the list" />
-            </div>
-            {showingLists ? null : (
-              <div className={cn("ml-auto", drop)} style={entering ? at(560) : undefined}>
-                <TypeFilter groups={filterGroups} counts={typeCounts} picked={picked} onToggle={toggleType} onClear={() => setPicked([])} />
-              </div>
-            )}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className={cn("min-w-0 max-w-full", drop)} style={entering ? at(450) : undefined}>
+            <GooeyTabs tabs={TABS} value={tab} onChange={pickTab} idPrefix="library" aria-label="Ways to view the list" />
           </div>
-        )}
+          {showingLists ? null : (
+            <div className={cn("ml-auto", drop)} style={entering ? at(560) : undefined}>
+              <TypeFilter groups={filterGroups} counts={typeCounts} picked={picked} onToggle={toggleType} onClear={() => setPicked([])} />
+            </div>
+          )}
+        </div>
 
-        {!showingLists && !showingBookmarks && narrowed ? (
+        {!showingLists && narrowed ? (
           <ul aria-label="Active search and types" className="mt-4 flex flex-wrap items-center gap-2">
             {query.trim() !== "" ? (
               <li>
@@ -294,21 +289,21 @@ export default function LibraryPage({ entries, categories }: Props) {
 
         <div
           id="library-panel"
-          role={showingBookmarks ? undefined : "tabpanel"}
-          aria-labelledby={showingBookmarks ? undefined : `library-tab-${tab}`}
+          role="tabpanel"
+          aria-labelledby={`library-tab-${tab}`}
           ref={panelRef}
           className="mt-6 scroll-mt-4"
         >
-          {showingBookmarks ? (
+          {showingLists ? (
             api.account.status === "in" ? (
-              <section aria-labelledby="library-bookmarks-title">
-                <h2 id="library-bookmarks-title" className="flex items-baseline gap-3 text-lg font-semibold tracking-tight">
-                  Bookmarks
+              <section aria-labelledby="library-lists-title">
+                <h2 id="library-lists-title" className="flex items-baseline gap-3 text-lg font-semibold tracking-tight">
+                  My lists
                   <span className="text-sm font-normal text-ink-muted tabular-nums">{savedRows.length === 1 ? "1 site" : `${savedRows.length} sites`}</span>
                 </h2>
                 {savedRows.length === 0 ? (
                   <p className="mt-6 max-w-xl leading-relaxed text-ink-secondary">
-                    You have not bookmarked a website yet. Press the bookmark button on any website and it is kept here, in your account.
+                    You have not saved a website yet. Press the bookmark button on any website and it is kept here, in your account.
                   </p>
                 ) : (
                   <ul className="mt-2 divide-y divide-line-subtle border-b border-line-subtle">
@@ -323,6 +318,7 @@ export default function LibraryPage({ entries, categories }: Props) {
                         myRating={api.mine.get(row.entry.id) ?? 0}
                         onBookmark={api.toggleBookmark}
                         onRate={api.rate}
+                        onClear={api.clearRating}
                       />
                     ))}
                   </ul>
@@ -330,16 +326,16 @@ export default function LibraryPage({ entries, categories }: Props) {
               </section>
             ) : api.account.status === "loading" ? (
               <p role="status" className="mt-6 text-ink-secondary">
-                Loading your bookmarks...
+                Loading your lists...
               </p>
             ) : (
-              <section aria-labelledby="library-bookmarks-title" className="rounded-xl border border-dashed border-line-strong px-6 py-12 text-center">
+              <section aria-labelledby="library-lists-title" className="rounded-xl border border-dashed border-line-strong px-6 py-12 text-center">
                 <Bookmark className="mx-auto size-6 text-ink-muted" aria-hidden="true" />
-                <h2 id="library-bookmarks-title" className="mt-4 text-lg font-semibold tracking-tight">
-                  Bookmarks
+                <h2 id="library-lists-title" className="mt-4 text-lg font-semibold tracking-tight">
+                  My lists
                 </h2>
                 <p className="mx-auto mt-2 max-w-md leading-relaxed text-ink-secondary">
-                  Sign in to see your bookmarks. Websites you bookmark are kept in your account and listed here.
+                  Sign in to see your lists. Websites you bookmark are kept in your account and listed here.
                 </p>
                 <a
                   href="/sign-in"
@@ -349,16 +345,6 @@ export default function LibraryPage({ entries, categories }: Props) {
                 </a>
               </section>
             )
-          ) : showingLists ? (
-            <section aria-labelledby="library-lists-title" className="rounded-xl border border-dashed border-line-strong px-6 py-12 text-center">
-              <Bookmark className="mx-auto size-6 text-ink-muted" aria-hidden="true" />
-              <h2 id="library-lists-title" className="mt-4 text-lg font-semibold tracking-tight">
-                My lists
-              </h2>
-              <p className="mx-auto mt-2 max-w-md leading-relaxed text-ink-secondary">
-                Saving lists comes next. When it is ready, your lists will be kept in this browser, on this device only, and you will not need an account.
-              </p>
-            </section>
           ) : (
             <section aria-labelledby="library-heading">
               <h2 id="library-heading" className={cn("flex items-baseline gap-3 text-lg font-semibold tracking-tight", drop)} style={entering ? at(640) : undefined}>
@@ -415,6 +401,7 @@ export default function LibraryPage({ entries, categories }: Props) {
                       myRating={api.mine.get(row.entry.id) ?? 0}
                       onBookmark={api.toggleBookmark}
                       onRate={api.rate}
+                      onClear={api.clearRating}
                     />
                   ))}
                 </ul>
@@ -423,7 +410,7 @@ export default function LibraryPage({ entries, categories }: Props) {
           )}
         </div>
 
-        {showingLists || showingBookmarks ? null : (
+        {showingLists ? null : (
           <div className={cn("mt-8 flex flex-col items-center gap-3", drop)} style={entering ? at(780 + shown.length * 70) : undefined}>
             <p aria-live="polite" className="text-sm text-ink-muted tabular-nums">
               {rows.length === 0
@@ -451,7 +438,22 @@ export default function LibraryPage({ entries, categories }: Props) {
           </div>
         )}
       </div>
-      {feedbackFor ? <FeedbackDrawer entry={feedbackFor} summary={api.summaries.get(feedbackFor.id)} signedIn={api.signedIn} onClose={closeFeedback} /> : null}
+      {feedbackFor ? (
+        <FeedbackDrawer
+          key={feedbackFor.entry.id}
+          entry={feedbackFor.entry}
+          summary={api.summaries.get(feedbackFor.entry.id)}
+          signedIn={api.signedIn}
+          startWriting={feedbackFor.write}
+          myRating={api.mine.get(feedbackFor.entry.id) ?? 0}
+          myReview={api.reviews.get(feedbackFor.entry.id)}
+          loadReviews={api.loadReviews}
+          onSaveReview={api.saveReview}
+          onDeleteReview={api.deleteReview}
+          onClearRating={api.clearRating}
+          onClose={closeFeedback}
+        />
+      ) : null}
     </div>
   );
 }
@@ -505,17 +507,19 @@ const EntryRow = memo(function EntryRow({
   myRating,
   onBookmark,
   onRate,
+  onClear,
 }: {
   row: Listing;
   showFree: boolean;
   /** Set only during the page's entrance: this row drops in after this many milliseconds. */
   dropAt?: number;
-  onOpenFeedback: (entry: Entry, button: HTMLElement) => void;
+  onOpenFeedback: (entry: Entry, button: HTMLElement, write?: boolean) => void;
   signedIn: boolean;
   bookmarked: boolean;
   myRating: number;
   onBookmark: (id: string) => Promise<string | null>;
   onRate: (id: string, stars: number) => Promise<string | null>;
+  onClear: (id: string) => Promise<string | null>;
 }) {
   const { entry, average, ratings } = row;
   // "Best for free" shows the free score; every other tab shows the main score of the category being looked at.
@@ -621,6 +625,8 @@ const EntryRow = memo(function EntryRow({
             myRating={myRating}
             onBookmark={onBookmark}
             onRate={onRate}
+            onClear={onClear}
+            onReview={(button) => onOpenFeedback(entry, button, true)}
           />
           <dl className="flex gap-8 text-sm">
             <div>

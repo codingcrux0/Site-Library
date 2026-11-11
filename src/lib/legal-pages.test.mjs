@@ -48,3 +48,14 @@ test("both pages say plainly that nobody else sees names or who rated what, and 
   assert.match(terms, /never with your name/);
   assert.match(terms, /delete yours at any time/);
 });
+
+test("both pages cover written reviews: plain text, shown without a name, held until approved, and removed with the account", () => {
+  assert.match(privacy, /written reviews/i);
+  assert.match(privacy, /without your name/i);
+  assert.match(privacy, /approve/i);
+  assert.match(terms, /written reviews/i);
+  assert.match(terms, /web addresses/i);
+  assert.match(terms, /remove (a|any) review/i);
+  // The menu's "Download my data" file really contains them (the page promises it).
+  assert.match(read("../components/library/use-account.ts"), /reviews:/);
+});
