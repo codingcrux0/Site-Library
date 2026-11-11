@@ -515,3 +515,11 @@ Three drafts in `docs/legal/` (policy, terms with the 18+ rule, and the reviewer
 **Known limit:** the page reads up to 1,000 list items at sign-in (the database's default page size); a person with more than 1,000 list memberships would see the rest missing until this is paged. Not likely at 10 lists and a few hundred bookmarks.
 **Cost:** the list page chunk grew from 80,875 to 91,489 bytes (about 25.6 KB gzip, was about 23.2 KB).
 
+## D49. The owner's review page (2026-11-11)
+**Owner said (own words):** yes to a small page for approving reviews, so the owner does not have to tick boxes in the Supabase table.
+**What it is:** `/admin/` lists every written review (waiting ones first) with who wrote it; Approve, Hide, Delete (delete asks to confirm). It is not linked from anywhere, not in the sitemap or robots.txt, and carries `noindex, nofollow`; but hiding is not the protection.
+**The protection is the database (`supabase/moderation.sql`, `moderation-test.sql`, `owner-setup.sql`):** the owner is one or more ACCOUNT IDS in an `owners` table that nobody can read or write through the site (row security on, no policy, no grant). Three functions (list, approve or hide, delete) each begin by asking "is the caller an owner?" and refuse everyone else; signed-out visitors cannot run them at all. The owner is pinned by account id, not by email, so signing up with the same email through another provider does not make anyone the owner. Approving carries the exact text the owner read; if the author edited it in between, the approval is refused (nothing unchecked can be published).
+**Why not a login of its own or a service key in the page:** a second login would be a second thing to protect; a service key in a browser page would break the security floor. This reuses the same Google/GitHub sign-in and lets the database decide.
+**Extra layer, not built (needs the owner's Cloudflare login and is optional):** Cloudflare Access in front of `/admin/*`. Say so if wanted.
+**Owner must:** keep two-step login on the Google and GitHub account used to sign in (they are now the key to this page).
+

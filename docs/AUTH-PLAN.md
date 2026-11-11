@@ -69,3 +69,5 @@ Everything above is a plan. No control is marked verified. Supabase's current li
   **Owner still has to:** run `supabase/account.sql` then `account-test.sql` in the SQL Editor; in Supabase set Site URL and the two Redirect URLs; publish the Google app and add the Privacy and Terms links on its consent screen; try both sign-ins for real.
 - **2026-11-11, step 4 (D47).** My lists is the real saved list; Clear my rating; written reviews (hidden until the owner approves; no name shown) with `supabase/reviews.sql` and `reviews-test.sql`. Owner also has to run those two files, and then tick `approved` on reviews they accept (Supabase > Table Editor > reviews).
 - **2026-11-11, step 5 (D48).** Named lists with `supabase/lists.sql` and `lists-test.sql` (run after `bookmarks.sql`). Private to the owner of each list; no public view.
+- **2026-11-11, step 6 (D49).** The owner page `/admin/` with `supabase/moderation.sql`, `moderation-test.sql` and `owner-setup.sql` (run in that order after `reviews.sql`).
+
