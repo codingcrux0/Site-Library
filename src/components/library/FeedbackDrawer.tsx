@@ -3,13 +3,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Entry } from "@/config/library";
 import { formatDate } from "@/lib/format-date";
+import type { RatingSummary } from "@/lib/account";
 import { summarizeFeedback } from "@/lib/ratings";
 import { cn } from "@/lib/utils";
 
 /*
  * The feedback panel: slides in from the right and lists what users said about one website, with the average and how the stars split.
- * It only READS. Accounts are not open yet (the legal gate), so "Write a review" only asks the visitor to sign in and nothing is saved
- * or sent. A website with no feedback shows an honest empty state: no made-up reviews, ever. (Only the localhost demo, started with `npm run dev:demo`, adds
+ * It only READS. The numbers are everyone's star ratings (src/components/library/use-account.ts). "Write a review" asks a signed-out visitor
+ * to sign in; signed in, it says plainly that written reviews are not open yet (ratings are, on the row). A website with no feedback shows an honest empty state: no made-up reviews, ever. (Only the localhost demo, started with `npm run dev:demo`, adds
  * example feedback, and the panel says so.)
  * It is built by hand with no new package: a dialog that traps Tab, closes with Escape or a click outside, locks the page behind it and
  * gives focus back to the button that opened it. It slides with transform and opacity only, which the graphics chip does for free.
@@ -28,7 +29,7 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
   );
 }
 
-export function FeedbackDrawer({ entry, onClose }: { entry: Entry; onClose: () => void }) {
+export function FeedbackDrawer({ entry, summary, signedIn, onClose }: { entry: Entry; summary?: RatingSummary; signedIn: boolean; onClose: () => void }) {
   const [shown, setShown] = useState(false); // false at first so the panel starts off screen, then slides in
   const [askReview, setAskReview] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -36,7 +37,8 @@ export function FeedbackDrawer({ entry, onClose }: { entry: Entry; onClose: () =
   const closing = useRef<ReturnType<typeof setTimeout>>(undefined);
   const titleId = useId();
 
-  const { count, average, counts } = summarizeFeedback(entry.feedback);
+  // Live numbers (everyone's star ratings) when there are some; otherwise whatever feedback is built into the entry (none, on the real site).
+  const { count, average, counts } = summary ?? summarizeFeedback(entry.feedback);
   const feedback = (entry.feedback ?? []).filter((f) => Number.isInteger(f.rating) && f.rating >= 1 && f.rating <= 5);
 
   // Slide out first, then tell the page to remove the panel.
@@ -133,7 +135,7 @@ export function FeedbackDrawer({ entry, onClose }: { entry: Entry; onClose: () =
             <div className="rounded-xl border border-dashed border-line-strong px-5 py-10 text-center">
               <MessageSquare className="mx-auto size-6 text-ink-muted" aria-hidden="true" />
               <p className="mt-3 font-medium">No feedback yet.</p>
-              <p className="mt-1 text-sm text-ink-secondary">Ratings and reviews from users will be listed here.</p>
+              <p className="mt-1 text-sm text-ink-secondary">Be the first: rate this website with the stars on its row.</p>
             </div>
           ) : (
             <>
@@ -203,21 +205,24 @@ export function FeedbackDrawer({ entry, onClose }: { entry: Entry; onClose: () =
         <footer className="border-t border-line-subtle px-6 py-4">
           {askReview ? (
             <div role="status">
-              <p className="text-sm font-medium">Sign in to write a review of this website.</p>
-              <p className="mt-0.5 text-xs text-ink-muted">Accounts are not open yet.</p>
+              <p className="text-sm font-medium">
+                {signedIn ? "Written reviews are not open yet. You can rate with the stars on the website's row." : "Sign in to write a review of this website."}
+              </p>
               <div className="mt-3 flex items-center gap-3">
-                <a
-                  href="/sign-in"
-                  className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-action-ink transition-colors hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
-                >
-                  Sign in
-                </a>
+                {signedIn ? null : (
+                  <a
+                    href="/sign-in"
+                    className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-action-ink transition-colors hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+                  >
+                    Sign in
+                  </a>
+                )}
                 <button
                   type="button"
                   onClick={() => setAskReview(false)}
                   className="cursor-pointer rounded-md px-1 text-sm text-ink-secondary underline underline-offset-4 hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 >
-                  Not now
+                  {signedIn ? "Close" : "Not now"}
                 </button>
               </div>
             </div>

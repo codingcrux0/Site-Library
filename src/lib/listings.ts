@@ -38,13 +38,17 @@ export function placementCounts(entries: Entry[]): Map<string, number> {
   return counts;
 }
 
-export function listingsFor(entries: Entry[], category: string): Listing[] {
+/**
+ * `live` = the star numbers from the database (see account.ts). A website that has live numbers shows those; the others keep the numbers
+ * worked out from their built-in feedback (none, on the real site).
+ */
+export function listingsFor(entries: Entry[], category: string, live?: ReadonlyMap<string, { count: number; average: number }>): Listing[] {
   const rows: Listing[] = [];
   for (const entry of entries) {
     const main = entry.placements[0];
     const placement = category === "" ? main : entry.placements.find((p) => p.category === category);
     if (!placement) continue;
-    const { count, average } = summarizeFeedback(entry.feedback);
+    const { count, average } = live?.get(entry.id) ?? summarizeFeedback(entry.feedback);
     const row: Omit<Listing, "text"> = {
       entry,
       name: entry.name,

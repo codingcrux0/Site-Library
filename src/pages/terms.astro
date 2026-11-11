@@ -1,0 +1,47 @@
+---
+// The Terms page: short, plain rules for using the list and an account (docs/DECISIONS.md D46). A plain-words default, not reviewed by a lawyer.
+import LegalShell from '@/components/legal/LegalShell.astro';
+import { SITE } from '@/config/site';
+---
+
+<LegalShell title="Terms" description="The plain rules for using Site Library." updated="11 November 2026">
+	<p>
+		{SITE.name} is free. By using it, or by signing in, you accept these rules. They are short on purpose.
+	</p>
+
+	<h2>What this is</h2>
+	<p>
+		A free list of websites, each reviewed, dated and scored by the owner, with the catch up front. The scores are the owner's judgement from reading
+		each site's own pages. They are not advice, and they can be out of date. The date on each row says when it was checked.
+	</p>
+
+	<h2>No promises</h2>
+	<p>
+		The list, the scores and the links are provided as they are. We do not control the websites we list, and using them is your choice. We cannot
+		promise the site is always available or free of mistakes.
+	</p>
+
+	<h2>Your account</h2>
+	<ul>
+		<li>You sign in with your own Google or GitHub account, and you keep that account safe.</li>
+		<li>One person, one account. Please do not use scripts to create ratings or bookmarks.</li>
+		<li>We may close an account that is used to abuse the site. You can delete yours at any time (see <a href="/privacy/">Privacy</a>).</li>
+	</ul>
+
+	<h2>Ratings</h2>
+	<p>
+		A star rating is your own opinion of a website. Please rate honestly. Ratings are shown only as totals and averages, never with your name.
+	</p>
+
+	<h2>Fairness</h2>
+	<p>Rankings are never for sale. If a link or a listing is ever sponsored or earns money, it will be marked as such and will not change its score.</p>
+
+	<h2>Corrections</h2>
+	<p>
+		If you run a website we list and something about it is wrong, message <a href={SITE.xUrl} rel="noopener noreferrer">@Adicrux on X</a>. We will
+		check it and correct it.
+	</p>
+
+	<h2>Changes</h2>
+	<p>We may change these rules or stop the service. The date at the top shows the latest change.</p>
+</LegalShell>

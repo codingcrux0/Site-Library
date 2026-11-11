@@ -1,6 +1,6 @@
 // Guards for the list page's per-website actions: the star rating, the review button, the bookmark button and the Bookmarks view.
-// Accounts are not open yet (the legal gate is not done), so these controls must only ASK the visitor to sign in:
-// they must not save, send or invent anything. Run with: npm test
+// Signed out, these controls only ASK the visitor to sign in. Signed in, they save through ONE place (use-account.ts), and never show a
+// rating or a bookmark that nobody made. Run with: npm test
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -27,26 +27,57 @@ test("Tailwind's dark: variant follows the site's own dark switch and dark colou
   assert.match(line, /\[data-tone="dark"\]/);
 });
 
-test("the review, rating and bookmark buttons only ask for a sign-in: they save and send nothing", () => {
+test("the review, rating and bookmark buttons never talk to the network or the browser's storage themselves", () => {
   const source = read("../components/library/EntryActions.tsx");
-  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage|document\.cookie/);
-  // Every prompt is honest that accounts are not open yet, and sends the visitor to the sign-in page.
-  assert.match(source, /Accounts are not open yet\./);
+  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage|document\.cookie|supabase/i);
+  // Signed out, the prompt sends the visitor to the sign-in page.
   assert.match(source, /href="\/sign-in"/);
-  // The star rating is controlled at 0: picking a star can never show a made-up rating.
-  assert.match(source, /value=\{0\}/);
+  assert.ok(!/Accounts are not open yet/.test(source), "accounts are open now, so no prompt may say they are not");
+  // The star shows only the visitor's OWN rating (0 when they have none), so a rating nobody gave can never appear.
+  assert.match(source, /value=\{armed \? myRating : myRating > 0 \? 1 : 0\}/);
+  // A written review is not built; signed in, the button says so plainly instead of pretending.
+  assert.match(source, /Written reviews are not open yet/);
 });
 
-test("the list page has a Bookmarks item in the sidebar that asks for a sign-in", () => {
+test("everything that is saved goes through use-account.ts: only the website and the stars are sent, never the owner, and never a secret key", () => {
+  const source = read("../components/library/use-account.ts");
+  assert.match(source, /from\("bookmarks"\)\.insert\(\{ site_id: id \}\)/);
+  assert.match(source, /from\("ratings"\)\.insert\(\{ site_id: id, stars \}\)/);
+  assert.match(source, /from\("ratings"\)\.update\(\{ stars \}\)/);
+  assert.doesNotMatch(source, /user_id/, "the database fills in the owner; the page never names one");
+  assert.match(source, /rpc\("delete_my_account"\)/);
+  assert.doesNotMatch(source, /sb_secret_|service_role|SERVICE/i);
+  // The public averages are one plain request with the publishable key, no library needed.
+  assert.match(source, /\/rest\/v1\/rating_summary/);
+  // A visitor with no saved sign-in downloads nothing extra: the library loads only after this check.
+  assert.match(source, /hasStoredSession\(window\.localStorage\)/);
+});
+
+test("the list page has a Bookmarks item in the sidebar: a sign-in prompt when signed out, the saved websites when signed in", () => {
   const source = read("../components/library/LibraryPage.tsx");
   assert.match(source, /Bookmarks/);
   assert.match(source, /Sign in to see your bookmarks/);
+  assert.match(source, /You have not bookmarked a website yet/);
+  assert.match(source, /<AccountMenu api=\{api\} \/>/);
 });
 
-test("the feedback panel only reads: it saves and sends nothing, and says accounts are not open", () => {
+test("the account menu shows the person's own name and picture, as text and as a picture from Google or GitHub only", () => {
+  const source = read("../components/library/AccountMenu.tsx");
+  assert.doesNotMatch(source, /dangerouslySetInnerHTML|innerHTML/, "a name is always shown as plain text");
+  assert.match(source, /referrerPolicy="no-referrer"/);
+  assert.match(source, /profile\.avatar/);
+  assert.match(source, /Sign out/);
+  assert.match(source, /Delete my account/);
+  assert.match(source, /Download my data/);
+  // Deleting asks once more, because it cannot be undone.
+  assert.match(source, /This cannot be undone/);
+});
+
+test("the feedback panel only reads: it sends nothing itself, and a signed-in person is told plainly that written reviews are not open", () => {
   const source = read("../components/library/FeedbackDrawer.tsx");
   assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage|document\.cookie/);
-  assert.match(source, /Accounts are not open yet\./);
+  assert.ok(!/Accounts are not open yet/.test(source));
+  assert.match(source, /Written reviews are not open yet/);
   assert.match(source, /href="\/sign-in"/);
   // A dialog that can be closed with the keyboard, and that a screen reader knows is a dialog.
   assert.match(source, /role="dialog"/);

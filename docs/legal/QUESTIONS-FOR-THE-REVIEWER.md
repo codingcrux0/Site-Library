@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-11-11 (D46).** The owner chose plain-words pages without a legal review and no 18+ rule. The live pages are `src/pages/privacy.astro` and `src/pages/terms.astro`. This file is kept only in case a reviewer is found later.
+
 # Questions for the qualified professional (2026-11-11)
 
 Bring these three drafts: `PRIVACY-POLICY-DRAFT.md`, `TERMS-AND-AGE-RULE-DRAFT.md` and this list. The site is a free, non-commercial directory run by one person in India; it plans accounts via Google and GitHub sign-in, and private bookmarks.

@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-11-11 (D46).** The owner chose plain-words pages without a legal review and no 18+ rule. The live pages are `src/pages/privacy.astro` and `src/pages/terms.astro`. This file is kept only in case a reviewer is found later.
+
 # Terms and age rule: DRAFT (2026-11-11)
 
 > **DRAFT. Not legal advice. Not published.** Written by an AI assistant as input for a qualified lawyer; it must be reviewed and approved by a qualified professional before real people sign in (LEGAL GATE). [Square brackets] are for the owner or the reviewer.

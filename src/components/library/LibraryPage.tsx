@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowUpRight, Bookmark, Folder, House, LayoutGrid, LogIn, Menu, MessagesSquare, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bookmark, Folder, House, LayoutGrid, Menu, MessagesSquare, X } from "lucide-react";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { GooeyTabs, type GooeyTab } from "@/components/ui/gooey-tabs";
@@ -7,14 +7,17 @@ import { SearchBox } from "@/components/ui/search-box";
 import { Sidebar, SidebarFooter, SidebarHeader, SidebarItem, SidebarNav, SidebarNested, SidebarSection } from "@/components/ui/sidebar";
 import type { Entry } from "@/config/library";
 import { filterGroupsFor } from "@/config/tags";
+import { keepKnown } from "@/lib/bookmarks";
 import { formatDate } from "@/lib/format-date";
 import { pageRange } from "@/lib/page-range";
 import { anyRated, arrange, listingsFor, placementCounts, type Listing } from "@/lib/listings";
 import { countTags, filterEntries, suggestionWords } from "@/lib/search";
 import { cn } from "@/lib/utils";
+import { AccountMenu } from "./AccountMenu";
 import { EntryActions } from "./EntryActions";
 import { FeedbackDrawer } from "./FeedbackDrawer";
 import { TypeFilter } from "./TypeFilter";
+import { useAccount } from "./use-account";
 
 /*
  * The list page: tabs and the "Filter by type" button on top, the sidebar (home link and a categories dropdown) on the left,
@@ -27,8 +30,9 @@ import { TypeFilter } from "./TypeFilter";
  * the filter count it in both. "Top user scored" and "Best for free" are two more ways to order the same rows (D35).
  * Each row shows its name, its types and ONE line of the description; hovering (or tabbing to) a row turns it into a box, swaps that line
  * for the full description and opens "the catch" inside it.
- * The right of each row has a star rating, a Review button and a bookmark button (EntryActions.tsx). The sidebar has a Bookmarks view.
- * Accounts are not open yet, so those only ask the visitor to sign in (see D31).
+ * The right of each row has a star rating, a Review button and a bookmark button (EntryActions.tsx). The sidebar has a Bookmarks view and,
+ * at the bottom, the account (AccountMenu.tsx): "Sign in", or the signed-in person's name and picture. Signed out, the buttons ask for a
+ * sign-in; signed in, they save bookmarks and ratings (use-account.ts holds all of that: who is signed in, bookmarks, ratings, averages).
  * Opening a row shows a "See user feedback" button; it opens ONE side panel (FeedbackDrawer.tsx) for the whole page (D33).
  */
 
@@ -64,6 +68,8 @@ export default function LibraryPage({ entries, categories }: Props) {
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string[]>([]); // the types ticked in "Filter by type"
   const [searchSlot, setSearchSlot] = useState<HTMLElement | null>(null);
+  const api = useAccount();
+  const bookmarkSet = useMemo(() => new Set(api.bookmarks), [api.bookmarks]);
   const panelRef = useRef<HTMLDivElement>(null);
   const [entering, setEntering] = useState(true); // true on the server too, so the first paint already has the classes
   useEffect(() => {
@@ -94,8 +100,8 @@ export default function LibraryPage({ entries, categories }: Props) {
   const deferredQuery = useDeferredValue(query);
 
   // One row per website for "All sites"; with a category picked, one row per website that is in it (judged in that category).
-  const everyRow = useMemo(() => listingsFor(entries, ""), [entries]);
-  const inCategory = useMemo(() => (category ? listingsFor(entries, category) : everyRow), [entries, category, everyRow]);
+  const everyRow = useMemo(() => listingsFor(entries, "", api.summaries), [entries, api.summaries]);
+  const inCategory = useMemo(() => (category ? listingsFor(entries, category, api.summaries) : everyRow), [entries, category, everyRow, api.summaries]);
   // "Best for free" only ever looks at the completely free websites.
   const scoped = useMemo(() => (tab === "free" ? inCategory.filter((row) => row.free) : inCategory), [inCategory, tab]);
   const rows = useMemo(
@@ -115,6 +121,11 @@ export default function LibraryPage({ entries, categories }: Props) {
   const current = Math.min(page, totalPages);
   const shown = rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
   const showingBookmarks = view === "bookmarks";
+  // The Bookmarks view: the saved websites in the order they were saved (newest first); one that has left the list is simply not shown.
+  const savedRows = useMemo(() => {
+    const byId = new Map(everyRow.map((row) => [row.entry.id, row]));
+    return keepKnown(api.bookmarks, new Set(byId.keys())).map((id) => byId.get(id)!);
+  }, [api.bookmarks, everyRow]);
   const showingLists = tab === "lists" && !showingBookmarks;
 
   const goToPage = (next: number) => {
@@ -236,9 +247,7 @@ export default function LibraryPage({ entries, categories }: Props) {
               </SidebarSection>
             </SidebarNav>
             <SidebarFooter className={drop} style={entering ? at(900) : undefined}>
-              <SidebarItem href="/sign-in" icon={<LogIn className="size-[18px]" />}>
-                Sign in
-              </SidebarItem>
+              <AccountMenu api={api} />
             </SidebarFooter>
           </Sidebar>
         </div>
@@ -291,23 +300,55 @@ export default function LibraryPage({ entries, categories }: Props) {
           className="mt-6 scroll-mt-4"
         >
           {showingBookmarks ? (
-            // Bookmarks belong to an account, and accounts are not open yet, so this view asks for a sign-in instead of showing a list.
-            <section aria-labelledby="library-bookmarks-title" className="rounded-xl border border-dashed border-line-strong px-6 py-12 text-center">
-              <Bookmark className="mx-auto size-6 text-ink-muted" aria-hidden="true" />
-              <h2 id="library-bookmarks-title" className="mt-4 text-lg font-semibold tracking-tight">
-                Bookmarks
-              </h2>
-              <p className="mx-auto mt-2 max-w-md leading-relaxed text-ink-secondary">
-                Sign in to see your bookmarks. Websites you bookmark are kept in your account and listed here.
+            api.account.status === "in" ? (
+              <section aria-labelledby="library-bookmarks-title">
+                <h2 id="library-bookmarks-title" className="flex items-baseline gap-3 text-lg font-semibold tracking-tight">
+                  Bookmarks
+                  <span className="text-sm font-normal text-ink-muted tabular-nums">{savedRows.length === 1 ? "1 site" : `${savedRows.length} sites`}</span>
+                </h2>
+                {savedRows.length === 0 ? (
+                  <p className="mt-6 max-w-xl leading-relaxed text-ink-secondary">
+                    You have not bookmarked a website yet. Press the bookmark button on any website and it is kept here, in your account.
+                  </p>
+                ) : (
+                  <ul className="mt-2 divide-y divide-line-subtle border-b border-line-subtle">
+                    {savedRows.map((row) => (
+                      <EntryRow
+                        key={row.entry.id}
+                        row={row}
+                        showFree={false}
+                        onOpenFeedback={openFeedback}
+                        signedIn
+                        bookmarked
+                        myRating={api.mine.get(row.entry.id) ?? 0}
+                        onBookmark={api.toggleBookmark}
+                        onRate={api.rate}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ) : api.account.status === "loading" ? (
+              <p role="status" className="mt-6 text-ink-secondary">
+                Loading your bookmarks...
               </p>
-              <p className="mx-auto mt-1 max-w-md text-sm text-ink-muted">Accounts are not open yet.</p>
-              <a
-                href="/sign-in"
-                className="mt-5 inline-flex rounded-full bg-action px-5 py-2 text-sm font-semibold text-action-ink transition-colors hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
-              >
-                Sign in
-              </a>
-            </section>
+            ) : (
+              <section aria-labelledby="library-bookmarks-title" className="rounded-xl border border-dashed border-line-strong px-6 py-12 text-center">
+                <Bookmark className="mx-auto size-6 text-ink-muted" aria-hidden="true" />
+                <h2 id="library-bookmarks-title" className="mt-4 text-lg font-semibold tracking-tight">
+                  Bookmarks
+                </h2>
+                <p className="mx-auto mt-2 max-w-md leading-relaxed text-ink-secondary">
+                  Sign in to see your bookmarks. Websites you bookmark are kept in your account and listed here.
+                </p>
+                <a
+                  href="/sign-in"
+                  className="mt-5 inline-flex rounded-full bg-action px-5 py-2 text-sm font-semibold text-action-ink transition-colors hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
+                >
+                  Sign in
+                </a>
+              </section>
+            )
           ) : showingLists ? (
             <section aria-labelledby="library-lists-title" className="rounded-xl border border-dashed border-line-strong px-6 py-12 text-center">
               <Bookmark className="mx-auto size-6 text-ink-muted" aria-hidden="true" />
@@ -363,7 +404,18 @@ export default function LibraryPage({ entries, categories }: Props) {
               ) : (
                 <ul className="mt-2 divide-y divide-line-subtle border-b border-line-subtle">
                   {shown.map((row, index) => (
-                    <EntryRow key={row.entry.id} row={row} showFree={tab === "free"} dropAt={entering ? 780 + index * 70 : undefined} onOpenFeedback={openFeedback} />
+                    <EntryRow
+                      key={row.entry.id}
+                      row={row}
+                      showFree={tab === "free"}
+                      dropAt={entering ? 780 + index * 70 : undefined}
+                      onOpenFeedback={openFeedback}
+                      signedIn={api.signedIn}
+                      bookmarked={bookmarkSet.has(row.entry.id)}
+                      myRating={api.mine.get(row.entry.id) ?? 0}
+                      onBookmark={api.toggleBookmark}
+                      onRate={api.rate}
+                    />
                   ))}
                 </ul>
               )}
@@ -399,7 +451,7 @@ export default function LibraryPage({ entries, categories }: Props) {
           </div>
         )}
       </div>
-      {feedbackFor ? <FeedbackDrawer entry={feedbackFor} onClose={closeFeedback} /> : null}
+      {feedbackFor ? <FeedbackDrawer entry={feedbackFor} summary={api.summaries.get(feedbackFor.id)} signedIn={api.signedIn} onClose={closeFeedback} /> : null}
     </div>
   );
 }
@@ -448,12 +500,22 @@ const EntryRow = memo(function EntryRow({
   showFree,
   dropAt,
   onOpenFeedback,
+  signedIn,
+  bookmarked,
+  myRating,
+  onBookmark,
+  onRate,
 }: {
   row: Listing;
   showFree: boolean;
   /** Set only during the page's entrance: this row drops in after this many milliseconds. */
   dropAt?: number;
   onOpenFeedback: (entry: Entry, button: HTMLElement) => void;
+  signedIn: boolean;
+  bookmarked: boolean;
+  myRating: number;
+  onBookmark: (id: string) => Promise<string | null>;
+  onRate: (id: string, stars: number) => Promise<string | null>;
 }) {
   const { entry, average, ratings } = row;
   // "Best for free" shows the free score; every other tab shows the main score of the category being looked at.
@@ -549,7 +611,17 @@ const EntryRow = memo(function EntryRow({
           </div>
         </div>
         <div className="flex flex-col gap-4 sm:items-start">
-          <EntryActions name={entry.name} average={average} count={ratings} />
+          <EntryActions
+            id={entry.id}
+            name={entry.name}
+            average={average}
+            count={ratings}
+            signedIn={signedIn}
+            bookmarked={bookmarked}
+            myRating={myRating}
+            onBookmark={onBookmark}
+            onRate={onRate}
+          />
           <dl className="flex gap-8 text-sm">
             <div>
               <dt className="text-ink-muted">{score.label}</dt>

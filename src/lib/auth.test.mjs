@@ -72,10 +72,16 @@ test("the Supabase library is loaded only when someone signs in (never at the to
   }
 });
 
-test("the real sign-in stays switched off unless the build says accounts are open (the legal gate)", () => {
+test("sign-in reads ONE switch, ACCOUNTS_OPEN in src/config/supabase.ts, and keeps the 'not open yet' path for when it is off", () => {
   const script = read("../scripts/auth-form.ts");
-  assert.match(script, /PUBLIC_ACCOUNTS_OPEN/);
-  assert.match(script, /Accounts are not open yet/);
+  const config = read("../config/supabase.ts");
+  assert.match(config, /export const ACCOUNTS_OPEN = (true|false);/);
+  assert.match(script, /ACCOUNTS_OPEN/);
+  assert.match(page, /ACCOUNTS_OPEN/);
+  assert.match(script, /if \(!OPEN\) return show\(/, "a click while closed must only show the notice");
+  assert.match(page, /Accounts are not open yet/, "the closed wording lives on the page");
+  // The old build-time variable is gone, so a forgotten setting on the host can no longer decide this.
+  assert.ok(!/PUBLIC_ACCOUNTS_OPEN/.test(script + page), "the old environment switch must not be used any more");
 });
 
 // A real Supabase secret key looks like sb_secret_ followed by a long run of letters and digits (the library's own code only contains the

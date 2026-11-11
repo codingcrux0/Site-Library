@@ -1,0 +1,76 @@
+---
+// The Privacy page: plain words about what this site keeps. Every sentence describes what the code does today (docs/DECISIONS.md D46).
+// It is a plain-words default, not reviewed by a lawyer; the owner chose to open accounts on that basis. Keep it TRUE: if the site starts
+// keeping something new, this page changes in the same push.
+import LegalShell from '@/components/legal/LegalShell.astro';
+import { SITE } from '@/config/site';
+---
+
+<LegalShell title="Privacy" description="What Site Library keeps about you, in plain words." updated="11 November 2026">
+	<p>
+		{SITE.name} is a free list of useful websites, run by one person (Aditya Rai, India). You can use the whole list without an account.
+		This page says exactly what is kept when you do and when you do not.
+	</p>
+
+	<h2>If you do not sign in</h2>
+	<ul>
+		<li>
+			<strong>Page views.</strong> The home page adds one to a single total. No IP address, cookie or ID is stored for this. Only the total is kept.
+		</li>
+		<li><strong>Your colour and dark-mode choice</strong> is kept in your own browser. It is never sent to us.</li>
+		<li>
+			<strong>Our website host, Cloudflare,</strong> delivers every page, so it sees technical data such as your IP address, as any host does. We do
+			not receive or keep that. See <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener noreferrer">Cloudflare's privacy policy</a>.
+		</li>
+		<li>We use <strong>no advertising, no analytics and no tracking cookies</strong>.</li>
+	</ul>
+
+	<h2>If you sign in</h2>
+	<p>You sign in with Google or GitHub. We never see or store a password.</p>
+	<ul>
+		<li>
+			<strong>What we get from them:</strong> your email address, your name and the address of your profile picture, a unique sign-in ID and which
+			one you used. The name and picture are shown only to you, in the sidebar. Nobody else sees them.
+		</li>
+		<li><strong>What you add:</strong> the websites you bookmark and the star ratings you give, each linked to your account.</li>
+		<li>
+			<strong>Who can see your bookmarks and ratings:</strong> only you. The database refuses anyone else, and that is tested. The person who runs the
+			database (the owner) can see them in its dashboard. Everyone sees only the totals for each website, such as "4.5 from 12 ratings", never who gave them.
+		</li>
+		<li>
+			<strong>Your browser</strong> keeps your sign-in in its local storage, so you stay signed in until you sign out.
+		</li>
+		<li>
+			<strong>Google and GitHub</strong> learn that you signed in to {SITE.name}. Their own policies apply to them:
+			<a href="https://policies.google.com/privacy" rel="noopener noreferrer">Google</a> and
+			<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener noreferrer">GitHub</a>.
+		</li>
+	</ul>
+
+	<h2>Where it is stored</h2>
+	<p>
+		Accounts, bookmarks and ratings are stored with <a href="https://supabase.com/privacy" rel="noopener noreferrer">Supabase</a>, our database
+		provider, on Amazon Web Services in Tokyo, Japan.
+	</p>
+
+	<h2>Your choices</h2>
+	<ul>
+		<li><strong>See your data:</strong> open your name in the sidebar of the list page and choose "Download my data".</li>
+		<li>
+			<strong>Delete it:</strong> choose "Delete my account" in the same place. Your account, your bookmarks and your ratings are deleted at once.
+			Backups kept by our database provider may hold a copy for a while. We have not confirmed for how long.
+		</li>
+		<li><strong>Questions or a problem:</strong> message <a href={SITE.xUrl} rel="noopener noreferrer">@Adicrux on X</a>.</li>
+	</ul>
+
+	<h2>Who can have an account</h2>
+	<p>
+		You need to be old enough to have a Google or GitHub account where you live. Reading the list needs no account at any age.
+	</p>
+
+	<h2>Other websites</h2>
+	<p>The websites we list are other people's sites with their own privacy rules. A link leaves {SITE.name}.</p>
+
+	<h2>Changes</h2>
+	<p>When what we keep changes, this page changes in the same update, and the date at the top changes with it.</p>
+</LegalShell>

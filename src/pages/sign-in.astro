@@ -1,10 +1,10 @@
 ---
 // Sign-in page, adapted from a supplied login-form component, now with two buttons only: Google and GitHub (docs/AUTH-PLAN.md).
-// LEGAL GATE: the buttons only do something real when the site is built with PUBLIC_ACCOUNTS_OPEN=1, which happens after a qualified
-// professional has reviewed the privacy policy, the 18+ rule and the DPDP/GDPR notes (CONTEXT.md). Until then a click only shows a message and
-// nothing is sent. The behaviour is in src/scripts/auth-form.ts.
+// The buttons really sign people in while ACCOUNTS_OPEN (src/config/supabase.ts) is true; if it is ever set to false, a click only shows a
+// message and nothing is sent. The behaviour is in src/scripts/auth-form.ts.
 import AuthShowcase from '@/components/auth/AuthShowcase.astro';
 import { SITE } from '@/config/site';
+import { ACCOUNTS_OPEN } from '@/config/supabase';
 import Layout from '@/layouts/main.astro';
 
 // Logos from Simple Icons 16.36.0 (CC0), inlined so nothing loads from outside.
@@ -20,15 +20,13 @@ const PROVIDERS = [
 	},
 ];
 
-// Real sign-in is built (docs/AUTH-PLAN.md) but stays switched OFF until the legal gate is passed: set PUBLIC_ACCOUNTS_OPEN=1 when building to
-// turn it on. Off, the buttons only show the notice and nothing is sent anywhere.
-const OPEN = import.meta.env.PUBLIC_ACCOUNTS_OPEN === '1';
+const OPEN = ACCOUNTS_OPEN;
 const TITLE = 'Sign in';
 const SUB = OPEN ? 'Continue with Google or GitHub.' : 'Accounts are not open yet.';
 const NOTICE = 'Nothing was sent or saved. Accounts open after our privacy checks are done.';
 ---
 
-<Layout title={`Sign in | ${SITE.name}`} description="Sign in with Google or GitHub. Accounts are not open yet.">
+<Layout title={`Sign in | ${SITE.name}`} description={OPEN ? 'Sign in with Google or GitHub to save websites and rate them.' : 'Sign in with Google or GitHub. Accounts are not open yet.'}>
 	<!-- rv-load: the entrance animation (src/styles/reveal.css) plays once on arrival. overflow-hidden hides the sideways slide. -->
 	<main class="rv-load grid min-h-dvh overflow-hidden md:grid-cols-2">
 		<AuthShowcase />
@@ -63,6 +61,11 @@ const NOTICE = 'Nothing was sent or saved. Accounts open after our privacy check
 							))
 						}
 					</div>
+
+					<p class="rv-fade rv-fade-1 mt-6 text-center text-xs leading-relaxed text-ink-muted">
+						By continuing you accept the <a href="/terms/" class="underline underline-offset-4 hover:text-ink-primary">Terms</a> and the
+						<a href="/privacy/" class="underline underline-offset-4 hover:text-ink-primary">Privacy page</a>.
+					</p>
 
 					<!-- Filled in by the script, then cleared after a few seconds. Pinned to the bottom of the screen so it is always in view. -->
 					<p

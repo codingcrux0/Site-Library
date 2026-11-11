@@ -31,6 +31,11 @@ test("astro.config: the Content Security Policy is on, scripts are limited to th
   for (const directive of ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "connect-src 'self' https://xqvqsdoxtcgeuwwbfhbg.supabase.co"]) {
     assert.ok(astroConfig.includes(directive), `${directive} is missing from the policy`);
   }
+  // Pictures: this site, inline data, and ONLY the two hosts a signed-in person's profile picture can come from (Google and GitHub).
+  assert.ok(
+    astroConfig.includes(`"img-src 'self' data: https://lh3.googleusercontent.com https://avatars.githubusercontent.com"`),
+    "img-src must allow only this site, data: and the two profile-picture hosts",
+  );
   // Scripts must stay on fingerprints (Astro's default): no way to say "allow any inline script" or "allow eval".
   assert.ok(!/unsafe-eval/.test(astroConfig), "unsafe-eval must never be allowed");
   assert.ok(!/scriptDirective/.test(astroConfig), "do not override the script rules: they must stay fingerprint-only");

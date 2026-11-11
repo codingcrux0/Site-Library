@@ -1,11 +1,11 @@
 // The two sign-in buttons (Google, GitHub). Plan: docs/AUTH-PLAN.md.
 //
-// LEGAL GATE: real sign-in only runs when the site was built with PUBLIC_ACCOUNTS_OPEN=1. Until then a click only shows the notice
-// "Accounts are not open yet" and nothing is sent anywhere. When it is on, the Supabase library is loaded at the first click (or when the
-// person comes back from Google or GitHub), never before, so nothing else on the site pays for it.
+// Real sign-in runs while ACCOUNTS_OPEN (src/config/supabase.ts) is true. If it is false, a click only shows the notice "Accounts are not open
+// yet" and nothing is sent anywhere. When it is on, the Supabase library is loaded at the first click (or when the person comes back from
+// Google or GitHub, or already has a saved sign-in), never before, so nothing else on the site pays for it.
+import { ACCOUNTS_OPEN as OPEN } from "@/config/supabase";
+import { hasStoredSession } from "@/lib/account";
 import { isProvider, readReturn } from "@/lib/auth";
-
-const OPEN = import.meta.env.PUBLIC_ACCOUNTS_OPEN === "1";
 const root = document.querySelector<HTMLElement>("[data-auth]");
 const notice = document.getElementById("auth-notice");
 
@@ -51,6 +51,19 @@ if (root && notice) {
         else show("Sign-in did not finish, and nothing was saved. Please try again.");
       } catch {
         show("Sign-in did not finish, and nothing was saved. Please try again.");
+      }
+    })();
+  }
+  // Someone who is already signed in has no use for this page: send them to the list. (Only looks when this browser has a saved sign-in.)
+  if (OPEN && back.kind === "none" && hasStoredSession(window.localStorage)) {
+    (async () => {
+      try {
+        const { getSupabase } = await import("@/lib/supabase-client");
+        const supabase = await getSupabase();
+        const { data } = await supabase.auth.getSession();
+        if (data.session) window.location.replace("/websites/");
+      } catch {
+        /* Stay on the page: they can still press a button. */
       }
     })();
   }

@@ -8,7 +8,10 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
-## Legal drafts written (2026-11-11, newest, D45)
+## Accounts opened, features built (2026-11-11, newest, D46)
+The owner opened sign-in without a legal review (D46). `ACCOUNTS_OPEN = true`; `/privacy/` and `/terms/` are live-ready; no age gate. The list page shows a signed-in person's name and picture, saves bookmarks and star ratings, and offers download my data, sign out and delete my account. Written reviews are not built. **The owner must run `supabase/account.sql` (then `account-test.sql`) on the real project**, publish the Google app, and check Supabase's URL settings; until `account.sql` runs, ratings and delete-account show a plain failure message and the averages are blank.
+
+## Legal drafts written (2026-11-11, D45, superseded by D46)
 `docs/legal/` holds a privacy policy, terms with the 18+ rule and a question list for a lawyer. Drafts only, not published, not legal advice; the legal gate is still closed. Blockers named in them: delete-my-account, export, the age tick, a second Supabase project.
 
 ## Sign-in built, bookmarks database proven (2026-11-11, D44)

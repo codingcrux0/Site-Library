@@ -99,7 +99,10 @@ const categoryBoxes = CATEGORIES.map((category) => {
 		</div>
 		<!-- The extra space at the bottom (below 1280px wide) keeps the floating colour buttons from covering the credit links when you reach the end. -->
 		<div class="mx-auto flex max-w-6xl flex-col gap-2 px-6 pt-8 pb-20 text-sm text-ink-muted min-[1280px]:pb-8 sm:flex-row sm:justify-between">
-			<p>&copy; {year} {SITE.name}</p>
+			<p>
+				&copy; {year} {SITE.name}. <a href="/privacy/" class="underline underline-offset-4 hover:text-ink-primary">Privacy</a> and
+				<a href="/terms/" class="underline underline-offset-4 hover:text-ink-primary">Terms</a>.
+			</p>
 			<!-- Credit required by the Skiper UI free license. -->
 			<!-- {' '} = an explicit space; Astro drops the line break between text and a link. -->
 			<p>

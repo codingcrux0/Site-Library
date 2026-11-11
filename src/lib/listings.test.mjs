@@ -133,3 +133,20 @@ test("arrange never changes the rows it is given", () => {
   arrange(rows, "newest");
   assert.equal(rows.map((r) => r.entry.id).join(), before);
 });
+
+// ---- Live star averages (from the database) replace the built-in feedback, for the websites that have some ----
+test("listingsFor uses the live averages for a website that has them, and the built-in feedback for the rest", () => {
+  const live = new Map([["b", { count: 3, average: 4.7, counts: [0, 0, 1, 0, 2] }]]);
+  const rows = listingsFor(entries, "", live);
+  const byId = Object.fromEntries(rows.map((r) => [r.entry.id, r]));
+  assert.equal(byId.b.ratings, 3);
+  assert.equal(byId.b.average, 4.7);
+  // a website the live map does not mention keeps what it had (nothing, here)
+  assert.equal(byId.a.ratings, 0);
+  assert.equal(byId.a.average, null);
+});
+
+test("listingsFor without live averages is unchanged", () => {
+  const rows = listingsFor(entries, "");
+  assert.ok(rows.every((r) => r.ratings === 0 && r.average === null));
+});

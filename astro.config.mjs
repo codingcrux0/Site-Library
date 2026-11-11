@@ -19,13 +19,13 @@ export default defineConfig({
 	build: { inlineStylesheets: 'always' },
 	// Content Security Policy: the browser runs ONLY this site's own scripts (Astro lists a fingerprint of each inline script in a <meta> tag
 	// at build time), so a script injected by someone else would be refused. Styles allow inline, because the pages use style="..." for the
-	// drop-in delays; that is much lower risk than scripts. Everything else may only come from this site itself (no outside fonts, trackers
-	// or images). frame-ancestors cannot go in a <meta> tag, so it is in public/_headers.
+	// drop-in delays; that is much lower risk than scripts. Everything else may only come from this site itself (no outside fonts or trackers, and pictures only
+	// from the two places a profile picture can come from: Google and GitHub). frame-ancestors cannot go in a <meta> tag, so it is in public/_headers.
 	security: {
 		csp: {
 			directives: [
 				"default-src 'self'",
-				"img-src 'self' data:",
+				"img-src 'self' data: https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
 				"connect-src 'self' https://xqvqsdoxtcgeuwwbfhbg.supabase.co",
 				"object-src 'none'",
 				"base-uri 'self'",
