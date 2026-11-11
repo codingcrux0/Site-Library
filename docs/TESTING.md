@@ -519,3 +519,10 @@ Tests first again: 4 new tests were written and failed (page not tinted, black s
 - 134 of 134 tests pass, type check 0 errors, build OK, gitleaks clean, `.env` ignored (only `.env.example` is tracked).
 - Screenshots of the built site at blue, rose, green and orange picks, before and after: the page is a pale tint and the buttons keep the full colour. Home and list page looked right for rose and green.
 - Not tested: the four category boxes by eye (they appear on scroll; only their hue and readability are tested), the drag of the picker in a real browser, a real phone, Safari, Firefox.
+
+## 2026-11-11 — bookmarks database and sign-in buttons (D44)
+- **Database (real project):** `supabase/rls-test.sql` passed on the dev project, left 0 rows and 0 test users. Negative controls (RLS switched off, then read granted to signed-out visitors) made it FAIL with the expected messages, then were undone. The live API refuses a signed-out read with "permission denied".
+- **Unit and guard tests (written first, seen failing):** 17 new in `bookmarks.test.mjs` and `auth.test.mjs`: id rule equals the database rule, limit equals the database limit, only Google and GitHub accepted, a provider's refusal text is never shown, CSP allows only this one Supabase address, no password or email box on the page, the library is imported lazily, the gate switch exists, no real secret key in the source or the built files (the pattern ignores the library's own prefix check).
+- 151 of 151 tests pass, type check 0 errors, `npm audit` 0 vulnerabilities, build OK, gitleaks clean.
+- **Real Chrome on the built site:** gate closed, click shows the notice, 0 Supabase requests; gate open, click goes to Supabase `authorize` with PKCE (`code_challenge_method=s256`); 0 CSP violations, 0 page errors. Screenshot looked right.
+- **Not tested:** a full sign-in (needs the Google and GitHub apps; both providers answer "provider is not enabled" for now), sign-out, deleting an account, the bookmark button (not built), a real phone, Safari, Firefox.

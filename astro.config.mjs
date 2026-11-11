@@ -26,7 +26,7 @@ export default defineConfig({
 			directives: [
 				"default-src 'self'",
 				"img-src 'self' data:",
-				"connect-src 'self'",
+				"connect-src 'self' https://xqvqsdoxtcgeuwwbfhbg.supabase.co",
 				"object-src 'none'",
 				"base-uri 'self'",
 				"form-action 'self'",

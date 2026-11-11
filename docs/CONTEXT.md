@@ -8,7 +8,10 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
-## Six websites and a softer colour wheel (2026-11-10, newest, D41 and D42)
+## Sign-in built, bookmarks database proven (2026-11-11, newest, D44)
+`/sign-in` has Google then GitHub buttons (no passwords); the real sign-in is compiled in only with `PUBLIC_ACCOUNTS_OPEN=1`, so the live site still says "Accounts are not open yet" (legal gate). The bookmarks table and its row-level security ran on the dev Supabase project and passed `supabase/rls-test.sql`. Next: the owner makes the Google and GitHub OAuth apps; then a real sign-in test, the bookmark button and view, and the legal gate.
+
+## Six websites and a softer colour wheel (2026-11-10, D41 and D42)
 80 websites, 102 placements (UI 32, Motion 18, 3D 7, Video & Audio 10, Design Inspiration 12, Templates & Assets 12, Tools 11); Best for free 36. Added Originkit, Pin UI, Skiper UI, Beautiful UI, Layro and Animmaster Lib (evidence `docs/drafts/grades-2026-11-10.md`). The colour wheel now mixes the pick into white instead of flooding the page with it (`src/lib/theme.ts`). Accounts and bookmarks are still not built: the legal gate comes first (see the login plan given to the owner).
 
 ## One row open at a time (2026-10-31, D40)

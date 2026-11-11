@@ -28,7 +28,7 @@ test("_headers: pages cannot be shown inside another website's frame (the part o
 
 test("astro.config: the Content Security Policy is on, scripts are limited to this site's own, and nothing outside may load", () => {
   assert.match(astroConfig, /csp:\s*\{/);
-  for (const directive of ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "connect-src 'self'"]) {
+  for (const directive of ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "connect-src 'self' https://xqvqsdoxtcgeuwwbfhbg.supabase.co"]) {
     assert.ok(astroConfig.includes(directive), `${directive} is missing from the policy`);
   }
   // Scripts must stay on fingerprints (Astro's default): no way to say "allow any inline script" or "allow eval".

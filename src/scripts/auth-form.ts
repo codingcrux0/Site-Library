@@ -1,56 +1,57 @@
-// The sign-in form is NOT connected to anything yet: accounts stay closed until the legal review is done
-// (CONTEXT.md, LEGAL GATE). So this script only does two things:
-//   1. switches between the three views (sign in / create account / reset password)
-//   2. when someone tries to submit, shows a message. Nothing typed here is sent, stored or logged.
-const form = document.querySelector<HTMLFormElement>("[data-auth-form]");
+// The two sign-in buttons (Google, GitHub). Plan: docs/AUTH-PLAN.md.
+//
+// LEGAL GATE: real sign-in only runs when the site was built with PUBLIC_ACCOUNTS_OPEN=1. Until then a click only shows the notice
+// "Accounts are not open yet" and nothing is sent anywhere. When it is on, the Supabase library is loaded at the first click (or when the
+// person comes back from Google or GitHub), never before, so nothing else on the site pays for it.
+import { isProvider, readReturn } from "@/lib/auth";
+
+const OPEN = import.meta.env.PUBLIC_ACCOUNTS_OPEN === "1";
+const root = document.querySelector<HTMLElement>("[data-auth]");
 const notice = document.getElementById("auth-notice");
-const swap = form?.querySelector<HTMLElement>("[data-swap]");
-const page = document.querySelector("main");
 
-if (form && notice && swap) {
-  const password = form.elements.namedItem("password") as HTMLInputElement;
-
-  const setMode = (mode: string) => {
-    form.dataset.mode = mode;
-    // Show only what belongs to this view. data-for="signin signup" means "both of these".
-    form.querySelectorAll<HTMLElement>("[data-for]").forEach((el) => {
-      el.hidden = !(el.dataset.for ?? "").split(" ").includes(mode);
-    });
-    // The password box is hidden in the reset view. A hidden box that is still "required" would silently block submitting.
-    password.disabled = mode === "reset";
-    password.autocomplete = mode === "signup" ? "new-password" : "current-password";
-    if (mode === "signup") password.minLength = 8;
-    else password.removeAttribute("minlength");
-    password.value = ""; // never carry a typed password into another view
-    notice.textContent = "";
-
-    // The first-load entrance (class rv-load) is only for arrival. Stop it, or boxes that reappear would replay it.
-    page?.classList.remove("rv-load");
-    // Re-play the short fade for the new view (remove, force a layout read, add).
-    swap.classList.remove("rv-swap");
-    void swap.offsetWidth;
-    swap.classList.add("rv-swap");
-    form.querySelector<HTMLInputElement>("input:not(:disabled)")?.focus({ preventScroll: true });
-  };
-
+if (root && notice) {
   let hideTimer = 0;
-  const showNotice = () => {
-    // Filling it in (not unhiding) lets screen readers announce it through role="status".
-    notice.textContent = notice.getAttribute(`data-notice-${form.dataset.mode}`) ?? "";
-    // An empty notice is hidden by CSS, so clearing it after a few seconds makes it fade away.
+  // Filling it in (not unhiding) lets screen readers announce it through role="status"; an empty notice is hidden by CSS.
+  const show = (message: string) => {
+    notice.textContent = message;
     window.clearTimeout(hideTimer);
     hideTimer = window.setTimeout(() => (notice.textContent = ""), 7000);
   };
 
-  form.addEventListener("click", (event) => {
-    const target = event.target as Element;
-    const switcher = target.closest<HTMLElement>("[data-mode-to]");
-    if (switcher?.dataset.modeTo) return setMode(switcher.dataset.modeTo);
-    if (target.closest("[data-provider]")) showNotice();
+  // Where the provider sends the person back to. Always this page (the address is on Supabase's allow-list), never an address from the URL.
+  const BACK = `${window.location.origin}/sign-in`;
+
+  root.addEventListener("click", async (event) => {
+    const button = (event.target as Element).closest<HTMLElement>("[data-provider]");
+    if (!button) return;
+    if (!OPEN) return show(root.dataset.open === "0" ? (notice.dataset.notice ?? "") : "");
+    const provider = (button.dataset.provider ?? "").toLowerCase();
+    if (!isProvider(provider)) return;
+    try {
+      const { getSupabase } = await import("@/lib/supabase-client");
+      const supabase = await getSupabase();
+      // In a browser this sends the person to Google or GitHub; there is nothing to do with the result unless it failed.
+      const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: BACK } });
+      if (error) show("Sign-in could not start. Please try again.");
+    } catch {
+      show("Sign-in could not start. Please try again.");
+    }
   });
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    showNotice();
-  });
+  // Coming back from Google or GitHub: the address carries a one-use code. The client swaps it for a session on its own; when it has, go on to the list.
+  const back = readReturn(window.location.search);
+  if (back.kind === "failed") show(back.message);
+  if (back.kind === "returning" && OPEN) {
+    (async () => {
+      try {
+        const { getSupabase } = await import("@/lib/supabase-client");
+        const supabase = await getSupabase();
+        const { data } = await supabase.auth.getSession(); // Waits until the code has been swapped.
+        if (data.session) window.location.replace("/websites/");
+        else show("Sign-in did not finish, and nothing was saved. Please try again.");
+      } catch {
+        show("Sign-in did not finish, and nothing was saved. Please try again.");
+      }
+    })();
+  }
 }

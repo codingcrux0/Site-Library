@@ -481,3 +481,9 @@ Search round (2026-10-30): removed the sidebar's unused "disabled" option and st
 ## D43. Sign-in plan: Google and GitHub only (2026-11-10)
 **Owner decided:** sign in with Google and GitHub only, no passwords. Supabase Auth (already chosen in D1) does the sign-in; bookmarks live in one table protected by row-level security. Full threat model, tests-first list and the owner's steps are in `docs/AUTH-PLAN.md`.
 **Not built.** It waits for: the owner's yes to the new `/sign-in` look, the one new dependency (`@supabase/supabase-js`) and two Supabase projects; the OAuth apps; and the LEGAL GATE before real people sign in. The email and password views on `/sign-in` will go when it is built.
+
+## D44. Sign-in built behind a switch, bookmarks database proven (2026-11-11)
+**Done:** the bookmarks database rules ran on the dev project and passed their own test (and failed it when a lock was removed). `/sign-in` now has two buttons, Google then GitHub, in its old look; email and password views are gone. Details in `docs/AUTH-PLAN.md`.
+**The switch:** real sign-in is only compiled in with `PUBLIC_ACCOUNTS_OPEN=1`. This keeps the LEGAL GATE (D10) while the code is ready; turning it on is a build setting plus the owner's go-ahead after the privacy review.
+**Why a build switch and not a runtime flag:** with it off, none of the Supabase code is in the live files at all, which is safer and faster than shipping it disabled.
+**Keys:** only the publishable key and the project address are in the code (public by design). The database connection string was used once from a private file and is not in the repo; the owner should reset the database password in Supabase afterwards.
