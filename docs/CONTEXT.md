@@ -8,7 +8,10 @@ A free, tested, ranked library of useful websites. V1 has one category, Frontend
 ## Where the files are (2026-10-29)
 All notes are in `docs/` (this file, `project_spec.md`, ARCHITECTURE, DECISIONS, SECURITY, TESTING, INCIDENT, COMPONENTS, `research_template.csv`). The root holds `README.md` (hosting steps first), `wrangler.jsonc`, `package.json`, `src/`, `public/`, `scripts/`, `.github/`. GitHub repo: **private**, `codingcrux0/Site-Library` (pushed 2026-10-29, 2 commits, in sync). Push access is a repo-only deploy key (`~/.ssh/site-library-deploy`, set in this repo's git config); nothing else on GitHub is reachable from this Mac. Next: deploy to Cloudflare (README, "Host it on Cloudflare").
 
-## Sign-in built, bookmarks database proven (2026-11-11, newest, D44)
+## Legal drafts written (2026-11-11, newest, D45)
+`docs/legal/` holds a privacy policy, terms with the 18+ rule and a question list for a lawyer. Drafts only, not published, not legal advice; the legal gate is still closed. Blockers named in them: delete-my-account, export, the age tick, a second Supabase project.
+
+## Sign-in built, bookmarks database proven (2026-11-11, D44)
 `/sign-in` has Google then GitHub buttons (no passwords); the real sign-in is compiled in only with `PUBLIC_ACCOUNTS_OPEN=1`, so the live site still says "Accounts are not open yet" (legal gate). The bookmarks table and its row-level security ran on the dev Supabase project and passed `supabase/rls-test.sql`. Next: the owner makes the Google and GitHub OAuth apps; then a real sign-in test, the bookmark button and view, and the legal gate.
 
 ## Six websites and a softer colour wheel (2026-11-10, D41 and D42)

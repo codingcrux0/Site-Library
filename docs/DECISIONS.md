@@ -487,3 +487,6 @@ Search round (2026-10-30): removed the sidebar's unused "disabled" option and st
 **The switch:** real sign-in is only compiled in with `PUBLIC_ACCOUNTS_OPEN=1`. This keeps the LEGAL GATE (D10) while the code is ready; turning it on is a build setting plus the owner's go-ahead after the privacy review.
 **Why a build switch and not a runtime flag:** with it off, none of the Supabase code is in the live files at all, which is safer and faster than shipping it disabled.
 **Keys:** only the publishable key and the project address are in the code (public by design). The database connection string was used once from a private file and is not in the repo; the owner should reset the database password in Supabase afterwards.
+
+## D45. Privacy policy, terms and age rule drafted for the lawyer (2026-11-11)
+Three drafts in `docs/legal/` (policy, terms with the 18+ rule, and the reviewer's question list), written from what the code really does (local storage only for the colour choice, a cookie-free counter, no analytics, sign-in via Google and GitHub, data in Supabase Tokyo). They are NOT published and NOT legal advice: the LEGAL GATE needs a qualified professional. Two sentences in the policy depend on unbuilt features (delete my account, export), and are blockers. Signed-out visitors keep the "Sign in to save" prompt (owner's yes, 2026-11-11).
